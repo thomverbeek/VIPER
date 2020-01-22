@@ -38,14 +38,14 @@ public protocol VIPERPresenter {
     
 open class VIPERRouter<Services, View: AnyObject> {
     
-    weak var view: View? {
+    public weak var view: View? {
         didSet {
             viewDidChange()
         }
     }
     
     internal var subscription: AnyCancellable?
-    let services: Services
+    public let services: Services
 
     required public init(services: Services) {
         self.services = services
