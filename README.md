@@ -7,5 +7,5 @@ A simple framework of VIPER components to construct modules.
 Add to your `Package.swift`'s `dependencies:` array:
 
 ```swift
-.package(url: "git@github.com:thomverbeek/VIPER.git", from: "1.0.0"),
+.package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.1.0"),
 ```
