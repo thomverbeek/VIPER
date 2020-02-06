@@ -3,17 +3,23 @@ import XCTest
 import Combine
 @testable import VIPER
 
-final class VIPERTests: XCTestCase {
+class VIPERTests: XCTestCase {
     
     struct Services {}
     
-    struct Dependencies {}
+    struct Dependencies {
+        var values: [String] = ["one", "two", "three"]
+    }
     
-    struct PresenterModel {}
+    struct PresenterModel {
+        var count: Int
+    }
     
-    struct ViewModel {}
+    struct ViewModel {
+        var title: String
+    }
     
-    class View: VIPERView {
+    class View: NSObject, VIPERView {
 
         let presenter: Presenter<Router>
         var viewModel: ViewModel
@@ -38,9 +44,13 @@ final class VIPERTests: XCTestCase {
             self.interactor = interactor
             self.router = router
         }
-        
+
+        func selected(string: String) {
+            interactor.add(value: string)
+        }
+
         static func map(presenterModel: PresenterModel) -> ViewModel {
-            return ViewModel()
+            return ViewModel(title: "\(presenterModel.count)")
         }
         
     }
@@ -48,9 +58,23 @@ final class VIPERTests: XCTestCase {
     class Interactor: VIPERInteractor {
         
         var output: CurrentValueSubject<PresenterModel, Never>
-        
+        private var values: [String] {
+            didSet {
+                output.send(Self.generatePresenterModel(values: values))
+            }
+        }
+
         required init(services: Services, dependencies: Dependencies) {
-            output = CurrentValueSubject(PresenterModel())
+            values = dependencies.values
+            output = CurrentValueSubject(Self.generatePresenterModel(values: values))
+        }
+
+        private static func generatePresenterModel(values: [String]) -> PresenterModel {
+            return PresenterModel(count: values.count)
+        }
+
+        func add(value: String) {
+            values.append(value)
         }
         
     }
@@ -68,22 +92,20 @@ final class VIPERTests: XCTestCase {
         }
         
     }
-    
-    func testAssembly() {
-        // arrange
-        typealias Builder = VIPERBuilder<View, Interactor, Presenter<Router>, Router>
-        
-        // act
-        let components = Builder.components(services: .init(), dependencies: .init())
-        
-        // assert
-        XCTAssert(components.view === components.router.view)
-        XCTAssert(components.presenter === components.view.presenter)
-        XCTAssert(components.interactor === components.presenter.interactor)
-        XCTAssert(components.router === components.presenter.router)
+
+    class Module: VIPERModule {
+
+        typealias Dependencies = VIPERTests.Dependencies
+        typealias Services = VIPERTests.Services
+        typealias View = VIPERTests.View
+
     }
-        
-    func testDisassembly() {
+
+}
+
+extension VIPERTests {
+
+    func testAssembly() {
         // arrange
         typealias Builder = VIPERBuilder<View, Interactor, Presenter<Router>, Router>
         var components: (view: View, presenter: Presenter, interactor: Interactor, router: Router)? = Builder.components(services: .init(), dependencies: .init())
@@ -92,10 +114,21 @@ final class VIPERTests: XCTestCase {
         weak var interactor = components?.interactor
         weak var presenter = components?.presenter
         weak var router = components?.router
-        router?.expectation = expectation(description: "View deallocated, VIPER stack disassembled")
-        XCTAssertNotNil(router?.subscription)
+        weak var subscription = router?.subscription
+
+        XCTAssert(view === components?.router.view)
+        XCTAssert(presenter === components?.view.presenter)
+        XCTAssert(interactor === components?.presenter.interactor)
+        XCTAssert(router === components?.presenter.router)
+
+        XCTAssertNotNil(view)
+        XCTAssertNotNil(presenter)
+        XCTAssertNotNil(interactor)
+        XCTAssertNotNil(router)
+        XCTAssertNotNil(subscription)
         
         // act
+        router?.expectation = expectation(description: "View changed")
         components = nil
 
         // assert
@@ -104,11 +137,22 @@ final class VIPERTests: XCTestCase {
             XCTAssertNil(interactor)
             XCTAssertNil(presenter)
             XCTAssertNil(router)
+            XCTAssertNil(subscription)
         }
+    }
+
+    func testDataFlow() {
+        // arrange
+        let view = Module.assemble(services: .init(), dependencies: .init())
+        XCTAssertEqual(view.viewModel.title, "3")
+
+        view.presenter.selected(string: "four")
+        XCTAssertEqual(view.viewModel.title, "4")
     }
 
     static var allTests = [
         ("testAssembly", testAssembly),
+        ("testDataFlow", testDataFlow)
     ]
     
 }
