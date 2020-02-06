@@ -1,6 +1,16 @@
 import Combine
 import Foundation
 
+/// A VIPER View represents the UI logic of your screen module.
+///
+/// It must define:
+///
+/// - a Presenter (which handles all user interaction logic on its behalf);
+/// - a View Model (which contains its view state information).
+///
+/// Messages are passed between VIPER components via entities. A View Model is used  by a Presenter to
+/// communicate view state information to the View.
+///
 public protocol VIPERView {
     
     associatedtype Presenter
@@ -11,6 +21,14 @@ public protocol VIPERView {
 
 }
 
+/// A VIPER Interactor represents the business logic of your screen module.
+///
+/// It must define:
+///
+/// - Services it requires (typically vended by a dependency injection container);
+/// - Dependencies it relies on (which give the screen its configuration);
+/// - a Presenter Model (which contains presentation state information).
+///
 public protocol VIPERInteractor {
     
     associatedtype Services
@@ -23,6 +41,13 @@ public protocol VIPERInteractor {
     
 }
 
+/// A VIPER Presenter represents the presentation logic of your screen module.
+///
+/// It must define:
+///
+/// - An Interactor (which handles all business logic on its behalf);
+/// - A Router (which handles all navigation logic on its behalf).
+///
 public protocol VIPERPresenter {
         
     associatedtype Interactor
@@ -35,8 +60,15 @@ public protocol VIPERPresenter {
     static func map(presenterModel: PresenterModel) -> ViewModel
     
 }
-    
-open class VIPERRouter<Services, View: AnyObject> {
+
+/// A VIPER Router handles the navigation logic of your screen module.
+///
+/// It must define:
+///
+/// - Services (which are used to instantiate other modules);
+/// - A View (that is weakly held by the router for configuration and navigation).
+///
+open class VIPERRouter<Services, View: AnyObject>: NSObject {
     
     public weak var view: View? {
         didSet {
@@ -60,7 +92,21 @@ open class VIPERRouter<Services, View: AnyObject> {
     }
 
 }
-    
+
+/// A VIPER Builder handles the assembly logic of your screen module.
+///
+/// A VIPER Builder is a composable assembler that specifies constraints for constructing VIPER
+/// components. It defines the strict guidelines that VIPER configurations must meet and ensures that
+/// communication between components is set up. This guarantees that any assembled VIPER configuration
+/// will communicate in a consistent manner, regardless of wherher the assembly is for production or testing..
+///
+/// The builder defines:
+///
+/// - A View (which strongly retains the VIPER components);
+/// - An Interactor (which must match the Presenter's Interactor);
+/// - A Presenter (which must match the View's Presenter);
+/// - A Router (which retains the subscription of the communication loop between components.
+///
 public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter<Interactor.Services, View>>
 where
     Presenter == View.Presenter,
