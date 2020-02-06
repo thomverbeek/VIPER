@@ -25,7 +25,7 @@ public protocol VIPERView {
 ///
 /// It must define:
 ///
-/// - Services it requires (typically vended by a dependency injection container);
+/// - Services it requires (micro-services, typically vended by a dependency injection container);
 /// - Dependencies it relies on (which give the screen its configuration);
 /// - a Presenter Model (which contains presentation state information).
 ///
@@ -136,7 +136,18 @@ where
 
 }
 
-/// A VIPER Module represents an assembled VIPER screen.
+/// A VIPER Module defines the minimal requirements needed to construct a VIPER screen.
+///
+/// It must define:
+///
+/// - Dependencies (used to configure the module);
+/// - Services (micro-services shared throughout your application for interactors to consume);
+/// - View (the assembled screen expected to be constructed).
+///
+/// In concept, a VIPER Module is an abstraction of a screen assembly. In practice, a typical implementation
+/// will make use of a VIPER Builder to construct and return the screen. When working across framework
+/// boundaries, you'll likely define a module that type-erases the View to some UI-specific component.
+///
 public protocol VIPERModule {
 
     associatedtype Dependencies
