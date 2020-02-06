@@ -105,7 +105,7 @@ open class VIPERRouter<Services, View: AnyObject>: NSObject {
 /// - A View (which strongly retains the VIPER components);
 /// - An Interactor (which must match the Presenter's Interactor);
 /// - A Presenter (which must match the View's Presenter);
-/// - A Router (which retains the subscription of the communication loop between components.
+/// - A Router (which retains the subscription of the communication loop between components).
 ///
 public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter<Interactor.Services, View>>
 where
