@@ -135,3 +135,14 @@ where
     }
 
 }
+
+/// A VIPER Module represents an assembled VIPER screen.
+public protocol VIPERModule {
+
+    associatedtype Dependencies
+    associatedtype Services
+    associatedtype View
+
+    static func assemble(services: Services, dependencies: Dependencies) -> View
+
+}
