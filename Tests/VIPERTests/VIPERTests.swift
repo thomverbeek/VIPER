@@ -95,9 +95,9 @@ class VIPERTests: XCTestCase {
 
     class Module: VIPERModule {
 
-        typealias Dependencies = VIPERTests.Dependencies
-        typealias Services = VIPERTests.Services
-        typealias View = VIPERTests.View
+        static func assemble(services: Services, dependencies: Dependencies) -> View {
+            return VIPERBuilder<View, Interactor, Presenter, Router>.assemble(services: services, dependencies: dependencies)
+        }
 
     }
 
