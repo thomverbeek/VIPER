@@ -4,8 +4,8 @@ import Combine
 @testable import VIPER
 
 class VIPERTests: XCTestCase {
-    
-    struct Services {}
+        
+    struct Modules {}
     
     struct Dependencies {
         var values: [String] = ["one", "two", "three"]
@@ -64,7 +64,7 @@ class VIPERTests: XCTestCase {
             }
         }
 
-        required init(services: Services, dependencies: Dependencies) {
+        required init(dependencies: Dependencies) {
             values = dependencies.values
             output = CurrentValueSubject(Self.generatePresenterModel(values: values))
         }
@@ -79,7 +79,7 @@ class VIPERTests: XCTestCase {
         
     }
     
-    class Router: VIPERRouter<Services, View> {
+    class Router: VIPERRouter<Modules, View> {
         
         var expectation: XCTestExpectation?
         
@@ -95,8 +95,8 @@ class VIPERTests: XCTestCase {
 
     class Module: VIPERModule {
 
-        static func assemble(services: Services, dependencies: Dependencies) -> View {
-            return VIPERBuilder<View, Interactor, Presenter, Router>.assemble(services: services, dependencies: dependencies)
+        static func assemble(dependencies: Dependencies, modules: Modules) -> View {
+            return VIPERBuilder<View, Interactor, Presenter, Router>.assemble(dependencies: dependencies, modules: modules)
         }
 
     }
@@ -107,14 +107,12 @@ extension VIPERTests {
 
     func testAssembly() {
         // arrange
-        typealias Builder = VIPERBuilder<View, Interactor, Presenter<Router>, Router>
-        var components: (view: View, presenter: Presenter, interactor: Interactor, router: Router)? = Builder.components(services: .init(), dependencies: .init())
-        
+        var components = Optional(VIPERBuilder<View, Interactor, Presenter, Router>.components(dependencies: .init(), modules: .init()))
+
         weak var view = components?.view
         weak var interactor = components?.interactor
         weak var presenter = components?.presenter
         weak var router = components?.router
-        weak var subscription = router?.subscription
 
         XCTAssert(view === components?.router.view)
         XCTAssert(presenter === components?.view.presenter)
@@ -125,7 +123,6 @@ extension VIPERTests {
         XCTAssertNotNil(presenter)
         XCTAssertNotNil(interactor)
         XCTAssertNotNil(router)
-        XCTAssertNotNil(subscription)
         
         // act
         router?.expectation = expectation(description: "View changed")
@@ -137,13 +134,12 @@ extension VIPERTests {
             XCTAssertNil(interactor)
             XCTAssertNil(presenter)
             XCTAssertNil(router)
-            XCTAssertNil(subscription)
         }
     }
 
     func testDataFlow() {
         // arrange
-        let view = Module.assemble(services: .init(), dependencies: .init())
+        let view = Module.assemble(dependencies: .init(), modules: .init())
         XCTAssertEqual(view.viewModel.title, "3")
 
         view.presenter.selected(string: "four")

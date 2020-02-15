@@ -33,13 +33,12 @@ public protocol VIPERView {
  */
 public protocol VIPERInteractor {
     
-    associatedtype Services
     associatedtype Dependencies
     associatedtype PresenterModel
     
     var output: CurrentValueSubject<PresenterModel, Never> { get }
     
-    init(services: Services, dependencies: Dependencies)
+    init(dependencies: Dependencies)
     
 }
 
@@ -69,12 +68,12 @@ public protocol VIPERPresenter {
 
  The Router defines:
 
- - Services (which are used to instantiate other modules);
- - A View (that is weakly held by the router for configuration and navigation).
+ - Modules (which is used to instantiate other modules);
+ - A View (that is weakly held by the router, a context for configuration and navigation).
 
  As Routers hold a weak reference to the view, they're also designated to hold the reference to the cancellable subscription.
  */
-open class VIPERRouter<Services, View: AnyObject>: NSObject {
+open class VIPERRouter<Modules, View: AnyObject>: NSObject {
     
     public weak var view: View? {
         didSet {
@@ -82,11 +81,11 @@ open class VIPERRouter<Services, View: AnyObject>: NSObject {
         }
     }
     
-    internal var subscription: AnyCancellable?
-    public let services: Services
+    fileprivate var subscription: AnyCancellable?
+    public let modules: Modules
 
-    required public init(services: Services) {
-        self.services = services
+    required public init(modules: Modules) {
+        self.modules = modules
     }
 
     /**
@@ -116,7 +115,7 @@ open class VIPERRouter<Services, View: AnyObject>: NSObject {
  - A Presenter (which must match the View's Presenter);
  - A Router (which retains the subscription of the communication loop between components).
  */
-public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter<Interactor.Services, View>>
+public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router>
     where
     Presenter == View.Presenter,
     Presenter.ViewModel == View.ViewModel,
@@ -126,9 +125,9 @@ public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteract
 {
 
     /// For testing purposes, you can use this method to both assemble and access components.
-    internal static func components(services: Interactor.Services, dependencies: Interactor.Dependencies) -> (view: View, interactor: Interactor, presenter: Presenter, router: Router) {
-        let router = Router(services: services)
-        let interactor = Interactor(services: services, dependencies: dependencies)
+    internal static func components<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> (view: View, interactor: Interactor, presenter: Presenter, router: Router) where Router: VIPERRouter<Modules, View> {
+        let router = Router(modules: modules)
+        let interactor = Interactor(dependencies: dependencies)
         let presenter = Presenter(interactor: interactor, router: router)
         let view = View(presenter: presenter, viewModel: Presenter.map(presenterModel: interactor.output.value))
 
@@ -140,8 +139,8 @@ public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteract
         return (view: view, interactor: interactor, presenter: presenter, router: router)
     }
     
-    public static func assemble(services: Interactor.Services, dependencies: Interactor.Dependencies) -> View {
-        return components(services: services, dependencies: dependencies).view
+    public static func assemble<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> View where Router: VIPERRouter<Modules, View> {
+        return components(dependencies: dependencies, modules: modules).view
     }
 
 }
@@ -151,8 +150,8 @@ public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteract
 
  It must define:
 
- - Dependencies (used to configure the module);
- - Services (micro-services shared throughout your application for interactors to consume);
+ - Dependencies (used to configure this module);
+ - Modules (used to vend other modules);
  - View (the assembled screen expected to be constructed).
 
  In concept, a VIPER Module is a simple abstraction of a screen assembly. In practice, a typical implementation
@@ -162,9 +161,9 @@ public class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteract
 public protocol VIPERModule {
 
     associatedtype Dependencies
-    associatedtype Services
+    associatedtype Modules
     associatedtype View
 
-    static func assemble(services: Services, dependencies: Dependencies) -> View
+    static func assemble(dependencies: Dependencies, modules: Modules) -> View
 
 }
