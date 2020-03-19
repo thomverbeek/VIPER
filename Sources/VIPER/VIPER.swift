@@ -144,26 +144,3 @@ public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERIn
     }
 
 }
-
-/**
- A VIPER Module defines the minimal requirements needed to construct a VIPER screen.
-
- It must define:
-
- - Dependencies (used to configure this module);
- - Modules (used to vend other modules);
- - View (the assembled screen expected to be constructed).
-
- In concept, a VIPER Module is a simple abstraction of a screen assembly. In practice, a typical implementation
- will make use of a VIPER Builder to construct and return the screen. When working across framework
- boundaries, you'll likely define a module that type-erases the View to some UI-specific component.
- */
-public protocol VIPERModule {
-
-    associatedtype Dependencies
-    associatedtype Modules
-    associatedtype View
-
-    static func assemble(dependencies: Dependencies, modules: Modules) -> View
-
-}
