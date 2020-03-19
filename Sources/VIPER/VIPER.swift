@@ -6,18 +6,18 @@ import Foundation
 
  It must define:
 
- - a Presenter (which handles all user interaction logic on its behalf);
+ - an Interactor (which handles all user interaction logic on its behalf);
  - a View Model (which contains its view state information).
 
- Messages are passed between VIPER components via entities. A View Model is used  by a Presenter to
- communicate view state information to the View.
+ Messages are passed between VIPER components via entities. Views receive View Models to update their
+ view state information.
  */
 public protocol VIPERView {
     
-    associatedtype Presenter
+    associatedtype Interactor
     associatedtype ViewModel
     
-    init(presenter: Presenter, viewModel: ViewModel)
+    init(interactor: Interactor, viewModel: ViewModel)
     func update(with viewModel: ViewModel)
 
 }
@@ -27,18 +27,19 @@ public protocol VIPERView {
 
  It must define:
 
- - Services it requires (micro-services, typically vended by a dependency injection container);
- - Dependencies it relies on (which give the screen its configuration);
+ - Dependencies it relies on (micro-services and other information used to configure the screen);
+ - a Router (which handles navigation logic on its behalf);
  - a Presenter Model (which contains presentation state information).
  */
 public protocol VIPERInteractor {
     
     associatedtype Dependencies
+    associatedtype Router
     associatedtype PresenterModel
     
     var output: CurrentValueSubject<PresenterModel, Never> { get }
     
-    init(dependencies: Dependencies)
+    init(dependencies: Dependencies, router: Router)
     
 }
 
@@ -47,17 +48,13 @@ public protocol VIPERInteractor {
 
  It must define:
 
- - An Interactor (which handles all business logic on its behalf);
- - A Router (which handles all navigation logic on its behalf).
+ - A PresenterModel (which contains state information received from the Interactor);
+ - A ViewModel (which is a mapping of state information suitable to be displayed in the view).
  */
 public protocol VIPERPresenter {
 
-    associatedtype Interactor
-    associatedtype Router
     associatedtype PresenterModel
     associatedtype ViewModel
-    
-    init(interactor: Interactor, router: Router)
     
     static func map(presenterModel: PresenterModel) -> ViewModel
     
@@ -71,7 +68,8 @@ public protocol VIPERPresenter {
  - Modules (which is used to instantiate other modules);
  - A View (that is weakly held by the router, a context for configuration and navigation).
 
- As Routers hold a weak reference to the view, they're also designated to hold the reference to the cancellable subscription.
+ As Routers hold a weak reference to the view, they're also designated to hold the reference to the cancellable
+ subscription.
  */
 open class VIPERRouter<Modules, View: AnyObject>: NSObject {
     
@@ -111,32 +109,30 @@ open class VIPERRouter<Modules, View: AnyObject>: NSObject {
  The Builder defines:
 
  - A View (which strongly retains the VIPER components);
- - An Interactor (which must match the Presenter's Interactor);
- - A Presenter (which must match the View's Presenter);
+ - An Interactor (which communicates with the specified Router);
+ - A Presenter (which maps the Interactor's PresenterModel into the View's ViewModel);
  - A Router (which retains the subscription of the communication loop between components).
  */
 public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router>
     where
-    Presenter == View.Presenter,
+    Interactor == View.Interactor,
+    Interactor.Router == Router,
     Presenter.ViewModel == View.ViewModel,
-    Presenter.Interactor == Interactor,
-    Presenter.PresenterModel == Interactor.PresenterModel,
-    Presenter.Router == Router
+    Presenter.PresenterModel == Interactor.PresenterModel
 {
 
     /// For testing purposes, you can use this method to both assemble and access components.
-    internal static func components<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> (view: View, interactor: Interactor, presenter: Presenter, router: Router) where Router: VIPERRouter<Modules, View> {
+    internal static func components<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> (view: View, interactor: Interactor, router: Router) where Router: VIPERRouter<Modules, View> {
         let router = Router(modules: modules)
-        let interactor = Interactor(dependencies: dependencies)
-        let presenter = Presenter(interactor: interactor, router: router)
-        let view = View(presenter: presenter, viewModel: Presenter.map(presenterModel: interactor.output.value))
+        let interactor = Interactor(dependencies: dependencies, router: router)
+        let view = View(interactor: interactor, viewModel: Presenter.map(presenterModel: interactor.output.value))
 
         router.subscription = interactor.output.sink { [weak view] presenterModel in
             view?.update(with: Presenter.map(presenterModel: presenterModel))
         }
         router.view = view
 
-        return (view: view, interactor: interactor, presenter: presenter, router: router)
+        return (view: view, interactor: interactor, router: router)
     }
     
     public static func assemble<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> View where Router: VIPERRouter<Modules, View> {

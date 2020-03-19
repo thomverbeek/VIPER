@@ -21,11 +21,11 @@ class VIPERTests: XCTestCase {
     
     class View: NSObject, VIPERView {
 
-        let presenter: Presenter<Router>
+        let interactor: Interactor<Router>
         var viewModel: ViewModel
         
-        required init(presenter: Presenter<Router>, viewModel: ViewModel) {
-            self.presenter = presenter
+        required init(interactor: Interactor<Router>, viewModel: ViewModel) {
+            self.interactor = interactor
             self.viewModel = viewModel
         }
         
@@ -35,37 +35,28 @@ class VIPERTests: XCTestCase {
         
     }
     
-    class Presenter<Router>: VIPERPresenter {
+    class Presenter: VIPERPresenter {
         
-        let interactor: Interactor
-        let router: Router
-        
-        required init(interactor: Interactor, router: Router) {
-            self.interactor = interactor
-            self.router = router
-        }
-
-        func selected(string: String) {
-            interactor.add(value: string)
-        }
-
         static func map(presenterModel: PresenterModel) -> ViewModel {
             return ViewModel(title: "\(presenterModel.count)")
         }
         
     }
     
-    class Interactor: VIPERInteractor {
+    class Interactor<Router>: VIPERInteractor {
         
-        var output: CurrentValueSubject<PresenterModel, Never>
         private var values: [String] {
             didSet {
                 output.send(Self.generatePresenterModel(values: values))
             }
         }
 
-        required init(dependencies: Dependencies) {
+        let router: Router
+        var output: CurrentValueSubject<PresenterModel, Never>
+
+        required init(dependencies: Dependencies, router: Router) {
             values = dependencies.values
+            self.router = router
             output = CurrentValueSubject(Self.generatePresenterModel(values: values))
         }
 
@@ -73,8 +64,8 @@ class VIPERTests: XCTestCase {
             return PresenterModel(count: values.count)
         }
 
-        func add(value: String) {
-            values.append(value)
+        func select(string: String) {
+            values.append(string)
         }
         
     }
@@ -93,14 +84,6 @@ class VIPERTests: XCTestCase {
         
     }
 
-    class Module: VIPERModule {
-
-        static func assemble(dependencies: Dependencies, modules: Modules) -> View {
-            return VIPERBuilder<View, Interactor, Presenter, Router>.assemble(dependencies: dependencies, modules: modules)
-        }
-
-    }
-
 }
 
 extension VIPERTests {
@@ -111,16 +94,13 @@ extension VIPERTests {
 
         weak var view = components?.view
         weak var interactor = components?.interactor
-        weak var presenter = components?.presenter
         weak var router = components?.router
 
         XCTAssert(view === components?.router.view)
-        XCTAssert(presenter === components?.view.presenter)
-        XCTAssert(interactor === components?.presenter.interactor)
-        XCTAssert(router === components?.presenter.router)
+        XCTAssert(interactor === components?.view.interactor)
+        XCTAssert(router === components?.interactor.router)
 
         XCTAssertNotNil(view)
-        XCTAssertNotNil(presenter)
         XCTAssertNotNil(interactor)
         XCTAssertNotNil(router)
         
@@ -132,17 +112,16 @@ extension VIPERTests {
         waitForExpectations(timeout: 1) { _ in
             XCTAssertNil(view)
             XCTAssertNil(interactor)
-            XCTAssertNil(presenter)
             XCTAssertNil(router)
         }
     }
 
     func testDataFlow() {
         // arrange
-        let view = Module.assemble(dependencies: .init(), modules: .init())
+        let view = VIPERBuilder<View, Interactor, Presenter, Router>.assemble(dependencies: .init(), modules: .init())
         XCTAssertEqual(view.viewModel.title, "3")
 
-        view.presenter.selected(string: "four")
+        view.interactor.select(string: "four")
         XCTAssertEqual(view.viewModel.title, "4")
     }
 
