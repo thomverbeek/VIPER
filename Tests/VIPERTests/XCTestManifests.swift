@@ -4,6 +4,7 @@ import XCTest
 public func allTests() -> [XCTestCaseEntry] {
     return [
         testCase(VIPERTests.allTests),
+        testCase(VIPERCommandLineTests.allTests)
     ]
 }
 #endif

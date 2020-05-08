@@ -71,7 +71,7 @@ public protocol VIPERPresenter {
  As Routers hold a weak reference to the view, they're also designated to hold the reference to the cancellable
  subscription.
  */
-open class VIPERRouter<Modules, View: AnyObject>: NSObject {
+open class VIPERRouter<Components, View: AnyObject>: NSObject {
     
     public weak var view: View? {
         didSet {
@@ -80,10 +80,10 @@ open class VIPERRouter<Modules, View: AnyObject>: NSObject {
     }
     
     fileprivate var subscription: AnyCancellable?
-    public let modules: Modules
+    public let components: Components
 
-    required public init(modules: Modules) {
-        self.modules = modules
+    required public init(components: Components) {
+        self.components = components
     }
 
     /**
@@ -122,8 +122,8 @@ public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERIn
 {
 
     /// For testing purposes, you can use this method to both assemble and access components.
-    internal static func components<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> (view: View, interactor: Interactor, router: Router) where Router: VIPERRouter<Modules, View> {
-        let router = Router(modules: modules)
+    internal static func components<Components>(dependencies: Interactor.Dependencies, components: Components) -> (view: View, interactor: Interactor, router: Router) where Router: VIPERRouter<Components, View> {
+        let router = Router(components: components)
         let interactor = Interactor(dependencies: dependencies, router: router)
         let view = View(interactor: interactor, viewModel: Presenter.map(presenterModel: interactor.output.value))
 
@@ -135,8 +135,8 @@ public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERIn
         return (view: view, interactor: interactor, router: router)
     }
     
-    public static func assemble<Modules>(dependencies: Interactor.Dependencies, modules: Modules) -> View where Router: VIPERRouter<Modules, View> {
-        return components(dependencies: dependencies, modules: modules).view
+    public static func assemble<Components>(dependencies: Interactor.Dependencies, components: Components) -> View where Router: VIPERRouter<Components, View> {
+        return self.components(dependencies: dependencies, components: components).view
     }
 
 }
