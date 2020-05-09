@@ -16,8 +16,8 @@ VIPER is a lightweight [software architecture](https://martinfowler.com/architec
     - [Xcode](#xcode)
     - [Swift Package Manager](#swift-package-manager)
 - [VIPER Command Line Tools](#viper-command-line-tools)
-- [About VIPER](about-viper)
-- [Acknowledgements](acknowledgements)
+- [About VIPER](#about-viper)
+- [Acknowledgements](#acknowledgements)
 
 # Installation
 
