@@ -90,7 +90,7 @@ extension VIPERTests {
 
     func testAssembly() {
         // arrange
-        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), dependencies: .init()))
+        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), resolver: .init()))
 
         weak var view = components?.view
         weak var interactor = components?.interactor
@@ -118,7 +118,7 @@ extension VIPERTests {
 
     func testDataFlow() {
         // arrange
-        let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), dependencies: .init())
+        let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), resolver: .init())
         XCTAssertEqual(view.viewModel.title, "3")
 
         view.interactor.select(string: "four")

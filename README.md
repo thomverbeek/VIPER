@@ -1,3 +1,6 @@
+![VIPER: Simple VIPER components in Swift](ouroboros@3x.png)
+[![swift-version](https://img.shields.io/badge/swift-5.1-brightgreen.svg)](https://github.com/apple/swift)
+
 # VIPER
 
 A simple framework of VIPER components to construct modules.

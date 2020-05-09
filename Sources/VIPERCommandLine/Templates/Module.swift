@@ -32,8 +32,8 @@ public protocol Dependencies {
 
 public enum \(moduleName) {
 
-    public func assemble(entities: Entities, dependencies: Dependencies) -> \(view) {
-        return VIPERModule<View, Interactor<Router>, Presenter, Router>.assemble(entities: entities, dependencies: dependencies)
+    public func assemble(entities: Entities, resolver: Resolver) -> \(view) {
+        return VIPERModule<View, Interactor<Router>, Presenter, Router>.assemble(entities: entities, resolver: Resolver)
     }
 
     public struct Entities {
