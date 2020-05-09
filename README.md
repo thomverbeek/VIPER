@@ -1,4 +1,4 @@
-<p align="center"><img src="ouroboros@3x.png" width="360" height="110"></p>
+<p align="center"><img src="ouroboros@3x.png" width="360" height="94"></p>
 
 <p align="center">
 <a href="https://github.com/apple/swift"><img src="https://img.shields.io/badge/swift-5.1-f16d39"></a>
