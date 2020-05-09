@@ -1,5 +1,9 @@
 ![VIPER: Simple VIPER components in Swift](ouroboros@3x.png)
-[![swift-version](https://img.shields.io/badge/swift-5.1-brightgreen.svg)](https://github.com/apple/swift)
+
+<p>
+<img src="https://img.shields.io/badge/platform-ios%20%7C%20macos%20%7C%20tvos%20-lightgrey">
+<img src="https://img.shields.io/badge/platform-ios%20%7C%20macos%20%7C%20tvos%20-lightgrey">
+</p>
 
 # VIPER
 
