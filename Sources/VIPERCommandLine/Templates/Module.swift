@@ -26,21 +26,22 @@ import \(framework)
 
 import VIPER
         
-public protocol Components {
+public protocol Dependencies {
     
 }
 
 public enum \(moduleName) {
 
-    public func assemble(dependencies: Dependencies, components: Components) -> \(view) {
-        return VIPERBuilder<View, Interactor<Router>, Presenter, Router>.assemble(dependencies: dependencies, components: components)
+    public func assemble(entities: Entities, dependencies: Dependencies) -> \(view) {
+        return VIPERModule<View, Interactor<Router>, Presenter, Router>.assemble(entities: entities, dependencies: dependencies)
     }
 
-    public struct Dependencies {
+    public struct Entities {
         
         public init() {
             
         }
+        
     }
         
     struct PresenterModel {

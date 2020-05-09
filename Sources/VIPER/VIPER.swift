@@ -33,13 +33,13 @@ public protocol VIPERView {
  */
 public protocol VIPERInteractor {
     
-    associatedtype Dependencies
+    associatedtype Entities
     associatedtype Router
     associatedtype PresenterModel
     
     var output: CurrentValueSubject<PresenterModel, Never> { get }
     
-    init(dependencies: Dependencies, router: Router)
+    init(entities: Entities, router: Router)
     
 }
 
@@ -71,7 +71,7 @@ public protocol VIPERPresenter {
  As Routers hold a weak reference to the view, they're also designated to hold the reference to the cancellable
  subscription.
  */
-open class VIPERRouter<Components, View: AnyObject>: NSObject {
+open class VIPERRouter<Dependencies, View: AnyObject>: NSObject {
     
     public weak var view: View? {
         didSet {
@@ -80,10 +80,10 @@ open class VIPERRouter<Components, View: AnyObject>: NSObject {
     }
     
     fileprivate var subscription: AnyCancellable?
-    public let components: Components
+    public let dependencies: Dependencies
 
-    required public init(components: Components) {
-        self.components = components
+    required public init(dependencies: Dependencies) {
+        self.dependencies = dependencies
     }
 
     /**
@@ -113,7 +113,7 @@ open class VIPERRouter<Components, View: AnyObject>: NSObject {
  - A Presenter (which maps the Interactor's PresenterModel into the View's ViewModel);
  - A Router (which retains the subscription of the communication loop between components).
  */
-public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router>
+public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router>
     where
     Interactor == View.Interactor,
     Interactor.Router == Router,
@@ -122,9 +122,9 @@ public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERIn
 {
 
     /// For testing purposes, you can use this method to both assemble and access components.
-    internal static func components<Components>(dependencies: Interactor.Dependencies, components: Components) -> (view: View, interactor: Interactor, router: Router) where Router: VIPERRouter<Components, View> {
-        let router = Router(components: components)
-        let interactor = Interactor(dependencies: dependencies, router: router)
+    internal static func components<Dependencies>(entities: Interactor.Entities, dependencies: Dependencies) -> (view: View, interactor: Interactor, router: Router) where Router: VIPERRouter<Dependencies, View> {
+        let router = Router(dependencies: dependencies)
+        let interactor = Interactor(entities: entities, router: router)
         let view = View(interactor: interactor, viewModel: Presenter.map(presenterModel: interactor.output.value))
 
         router.subscription = interactor.output.sink { [weak view] presenterModel in
@@ -135,8 +135,8 @@ public final class VIPERBuilder<View: VIPERView & AnyObject, Interactor: VIPERIn
         return (view: view, interactor: interactor, router: router)
     }
     
-    public static func assemble<Components>(dependencies: Interactor.Dependencies, components: Components) -> View where Router: VIPERRouter<Components, View> {
-        return self.components(dependencies: dependencies, components: components).view
+    public static func assemble<Dependencies>(entities: Interactor.Entities, dependencies: Dependencies) -> View where Router: VIPERRouter<Dependencies, View> {
+        return components(entities: entities, dependencies: dependencies).view
     }
 
 }

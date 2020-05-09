@@ -5,9 +5,9 @@ import Combine
 
 class VIPERTests: XCTestCase {
         
-    struct Components {}
+    struct Dependencies {}
     
-    struct Dependencies {
+    struct Entities {
         var values: [String] = ["one", "two", "three"]
     }
     
@@ -54,8 +54,8 @@ class VIPERTests: XCTestCase {
         let router: Router
         var output: CurrentValueSubject<PresenterModel, Never>
 
-        required init(dependencies: Dependencies, router: Router) {
-            values = dependencies.values
+        required init(entities: Entities, router: Router) {
+            values = entities.values
             self.router = router
             output = CurrentValueSubject(Self.generatePresenterModel(values: values))
         }
@@ -70,7 +70,7 @@ class VIPERTests: XCTestCase {
         
     }
     
-    class Router: VIPERRouter<Components, View> {
+    class Router: VIPERRouter<Dependencies, View> {
         
         var expectation: XCTestExpectation?
         
@@ -90,7 +90,7 @@ extension VIPERTests {
 
     func testAssembly() {
         // arrange
-        var components = Optional(VIPERBuilder<View, Interactor, Presenter, Router>.components(dependencies: .init(), components: .init()))
+        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), dependencies: .init()))
 
         weak var view = components?.view
         weak var interactor = components?.interactor
@@ -118,7 +118,7 @@ extension VIPERTests {
 
     func testDataFlow() {
         // arrange
-        let view = VIPERBuilder<View, Interactor, Presenter, Router>.assemble(dependencies: .init(), components: .init())
+        let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), dependencies: .init())
         XCTAssertEqual(view.viewModel.title, "3")
 
         view.interactor.select(string: "four")

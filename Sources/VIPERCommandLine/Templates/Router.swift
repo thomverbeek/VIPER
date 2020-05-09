@@ -11,7 +11,7 @@ import VIPER
 
 extension \(moduleName) {
     
-    class Router: VIPERRouter<Components, View> {
+    class Router: VIPERRouter<Dependencies, View> {
             
     }
 

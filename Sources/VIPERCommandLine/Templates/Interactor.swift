@@ -17,7 +17,7 @@ extension \(moduleName) {
         private let router: Router
         private(set) var output: CurrentValueSubject<PresenterModel, Never>
         
-        required init(dependencies: Dependencies, router: Router) {
+        required init(entities: Entities, router: Router) {
             self.router = router
             output = .init(Self.generatePresenterModel())
         }
