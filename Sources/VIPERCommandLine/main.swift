@@ -35,7 +35,7 @@ struct Generate: ParsableCommand {
     private var output: String
     
     @Option(default: .iOS, help: "The OS for the generated module. [iOS,macOS,tvOS]")
-    private var operatingSystem: OperatingSystem
+    private var os: OperatingSystem
 
     @Flag(name: .shortAndLong, help: "Show extra logging for debugging purposes.")
     private var verbose: Bool
@@ -59,21 +59,18 @@ struct Generate: ParsableCommand {
         try generateFile(from: Presenter.self)
         try generateFile(from: Router.self)
 
-        if verbose {
-            print("Finished generating module \"\(moduleName)\" at \"\(directory.path)\".")
-        }
+        print("Finished generating module \"\(moduleName)\" at \"\(directory.path)\".")
     }
     
     private func generateFile<T: Template>(from template: T.Type) throws {
         let url = directory.appendingPathComponent(T.filename).appendingPathExtension("swift")
-        let contents = T.contents(moduleName: moduleName, operatingSystem: operatingSystem)
+        let contents = T.contents(moduleName: moduleName, operatingSystem: os)
 
         if verbose {
             print("Generating \(url.path)…")
         }
         
-        let success = fileManager.createFile(atPath: url.path, contents: contents.data(using: .utf8), attributes: nil)
-        if !success {
+        if !fileManager.createFile(atPath: url.path, contents: contents.data(using: .utf8), attributes: nil) {
             throw Error.unableToCreateFile
         }
     }

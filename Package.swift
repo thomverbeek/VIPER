@@ -33,8 +33,5 @@ let package = Package(
         .testTarget(
             name: "VIPERTests",
             dependencies: ["VIPER"]),
-        .testTarget(
-            name: "VIPERCommandLineTests",
-            dependencies: ["VIPERCommandLine"]),
     ]
 )
