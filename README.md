@@ -10,7 +10,7 @@
 
 VIPER is a lightweight [software architecture](https://martinfowler.com/architecture/) framework for Swift.
 
-[Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) is a software architecture pattern devised by Robert C. Martin in 2012 that promotes the SOLID principles of software design. The concept of VIPER is an iOS architecture pattern inspired by the Clean Architecture, originally coined by developers of [Mutual Mobile](https://mutualmobile.com/resources/architecting-ios-apps-viper) and popularised by their [objc.io](https://www.objc.io/issues/13-architecture/viper/) article. This framework is a Swift implementation of the aforementioned architecture principles that enables you to build VIPER apps.
+[Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) is a software architecture pattern devised by Robert C. Martin in 2012 that promotes the SOLID principles of software design. The concept of VIPER is an iOS architecture pattern inspired by the Clean Architecture, originally coined by developers of [Mutual Mobile](https://mutualmobile.com/resources/architecting-ios-apps-viper) and popularised by their [objc.io](https://www.objc.io/issues/13-architecture/viper/) article. This framework is a Swift implementation of the aforementioned architecture principles that enables you to build VIPER apps for iOS, macOS and tvOS.
 
 - [Installation](#installation)
     - [Xcode](#xcode)
@@ -21,11 +21,7 @@ VIPER is a lightweight [software architecture](https://martinfowler.com/architec
 
 # Installation
 
-VIPER is only available as a Swift Package.
-
-## Xcode
-
-In your project or workspace, choose <code>File ▸ Swift Packages ▸ Add Package Dependency…</code> to add VIPER as a package dependency.  
+> VIPER is only available as a Swift Package.
 
 ## Swift Package Manager
 
@@ -34,6 +30,11 @@ Add the following to your `Package.swift`'s `dependencies:` array:
 ```swift
 .package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.3.0"),
 ```
+
+## Xcode
+
+In your project or workspace, choose <code>File ▸ Swift Packages ▸ Add Package Dependency…</code> to add `https://github.com/thomverbeek/VIPER` as a package dependency.  
+
 
 # VIPER Command Line Tools
 
@@ -62,7 +63,7 @@ There's a number of implementations out there in the wild that try to meet these
 
 ## _“Simplicity is the ultimate sophistication”_
 
-This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under a hundred lines of code.
+This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under a hundred lines of code. Check out `VIPER.swift`. 
 
 [x] It allows the compiler to help guide beginners, yet provides swiss-army flexibility to advancers
 [x] It automates concepts like assembly and weak relationships so you don't have to
