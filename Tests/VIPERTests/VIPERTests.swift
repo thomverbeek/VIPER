@@ -5,7 +5,7 @@ import Combine
 
 class VIPERTests: XCTestCase {
         
-    struct Dependencies {}
+    struct Builder {}
     
     struct Entities {
         var values: [String] = ["one", "two", "three"]
@@ -70,7 +70,7 @@ class VIPERTests: XCTestCase {
         
     }
     
-    class Router: VIPERRouter<Dependencies, View> {
+    class Router: VIPERRouter<Builder, View> {
         
         var expectation: XCTestExpectation?
         
@@ -90,7 +90,7 @@ extension VIPERTests {
 
     func testAssembly() {
         // arrange
-        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), resolver: .init()))
+        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), builder: .init()))
 
         weak var view = components?.view
         weak var interactor = components?.interactor
@@ -118,7 +118,7 @@ extension VIPERTests {
 
     func testDataFlow() {
         // arrange
-        let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), resolver: .init())
+        let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), builder: .init())
         XCTAssertEqual(view.viewModel.title, "3")
 
         view.interactor.select(string: "four")
