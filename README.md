@@ -5,7 +5,9 @@
 # VIPER
 
 ![Swift](https://img.shields.io/badge/swift-5.1-f16d39)
-![Platforms](https://img.shields.io/badge/platform-ios%20%7C%20macos%20%7C%20tvos%20-lightgrey)
+[![iOS](https://img.shields.io/badge/iOS-13-brightgreen)](https://developer.apple.com/ios/)
+[![macOS](https://img.shields.io/badge/macos-10.15-brightgreen)](https://developer.apple.com/macos/)
+[![tvOS](https://img.shields.io/badge/tvos-13-brightgreen)](https://developer.apple.com/tvos/)
 [![Releases](https://img.shields.io/github/v/tag/thomverbeek/VIPER?label=release)](https://github.com/thomverbeek/VIPER/releases)
 
 VIPER is a lightweight [software architecture](https://martinfowler.com/architecture/) framework for Swift.
