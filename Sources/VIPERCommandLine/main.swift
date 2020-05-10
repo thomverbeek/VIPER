@@ -20,8 +20,12 @@ struct Generate: ParsableCommand {
         return .default
     }
     
-    private var directory: URL {
-        return URL(fileURLWithPath: output).appendingPathComponent(moduleName)
+    private var destination: URL {
+        var url = URL(fileURLWithPath: output)
+        if directory {
+            url.appendPathComponent(moduleName)
+        }
+        return url
     }
     
     private var moduleName: String {
@@ -37,6 +41,9 @@ struct Generate: ParsableCommand {
     @Option(default: .iOS, help: "The OS for the generated module. [iOS,macOS,tvOS]")
     private var os: OperatingSystem
 
+    @Option(name: .short, default: true, help: "Creates a new directory for generated files.")
+    private var directory: Bool
+
     @Flag(name: .shortAndLong, help: "Show extra logging for debugging purposes.")
     private var verbose: Bool
 
@@ -47,10 +54,10 @@ struct Generate: ParsableCommand {
             print("Generating module \"\(moduleName)\"…")
         }
         
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+        try fileManager.createDirectory(at: destination, withIntermediateDirectories: true, attributes: nil)
         
         if verbose {
-            print("Generated directory at \(directory.path)")
+            print("Generated directory at \(destination.path)")
         }
         
         try generateFile(from: Module.self)
@@ -59,11 +66,11 @@ struct Generate: ParsableCommand {
         try generateFile(from: Presenter.self)
         try generateFile(from: Router.self)
 
-        print("Finished generating module \"\(moduleName)\" at \"\(directory.path)\".")
+        print("Finished generating module \"\(moduleName)\" at \"\(destination.path)\".")
     }
     
     private func generateFile<T: Template>(from template: T.Type) throws {
-        let url = directory.appendingPathComponent(T.filename).appendingPathExtension("swift")
+        let url = destination.appendingPathComponent(T.filename).appendingPathExtension("swift")
         let contents = T.contents(moduleName: moduleName, operatingSystem: os)
 
         if verbose {

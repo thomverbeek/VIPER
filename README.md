@@ -13,17 +13,17 @@ VIPER is a lightweight [software architecture](https://martinfowler.com/architec
 [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) is a software architecture pattern devised by Robert C. Martin in 2012 that promotes the SOLID principles of software design. The concept of VIPER is an iOS architecture pattern inspired by the Clean Architecture, originally coined by developers of [Mutual Mobile](https://mutualmobile.com/resources/architecting-ios-apps-viper) and popularised by their [objc.io](https://www.objc.io/issues/13-architecture/viper/) article. This framework is a Swift implementation of the aforementioned architecture principles that enables you to build VIPER apps for iOS, macOS and tvOS.
 
 - [Installation](#installation)
-    - [Xcode](#xcode)
     - [Swift Package Manager](#swift-package-manager)
+    - [Xcode](#xcode)
 - [VIPER Command Line Tools](#viper-command-line-tools)
 - [About VIPER](#about-viper)
 - [Acknowledgements](#acknowledgements)
 
-# Installation
+## Installation
 
-> VIPER is only available as a Swift Package.
+VIPER is only available as a Swift Package.
 
-## Swift Package Manager
+### Swift Package Manager
 
 Add the following to your `Package.swift`'s `dependencies:` array:
 
@@ -31,18 +31,27 @@ Add the following to your `Package.swift`'s `dependencies:` array:
 .package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.3.0"),
 ```
 
-## Xcode
+### Xcode
 
-In your project or workspace, choose <code>File ▸ Swift Packages ▸ Add Package Dependency…</code> to add `https://github.com/thomverbeek/VIPER` as a package dependency.  
+In your project or workspace, choose `File ▸ Swift Packages ▸ Add Package Dependency…` to add `https://github.com/thomverbeek/VIPER` as a package dependency. 
 
+## VIPER Command Line Tools
 
-# VIPER Command Line Tools
+This package comes bundled with `viper-tools`, a command line utility.
 
-This package comes bundled with `viper-tools`, a command line utility. You can use this to
-generate new VIPER modules. Simply call `swift run viper-tools` from the Swift package
-directory to generate a named VIPER module for your intended platform.
+- Open up Terminal, `cd` into this Swift package, and run the following command:
 
-# About VIPER
+```bash
+$ swift run viper-tools`
+```
+
+- This tool is configurable with subcommands. Use the `generate` subcommand to generate a new VIPER module. For example, to generate a module called "MyModule" for macOS on the Desktop:
+
+```bash
+$ swift run viper-tools generate MyModule ~/Desktop/ --os macOS --verbose
+```
+
+## About VIPER
 
 VIPER divides application logic into distinct components of responsibility: 
 
@@ -61,7 +70,7 @@ The VIPER manifesto isn't without its flaws:
 
 There are numerous implementations out in the wild that try to meet these requirements and then some, but they leave a bit more to be desired. VIPER can be difficult to grasp and fully implement as a framework, and the Swift language throws even more hurdles in the mix due to its linguistic quirks and type-safe limitation. Most frameworks out there simply attempt to translate the original Objective-C sample code to Swift, forcing the developer to wire up components manually and force-cast between types. These frustrations ultimately led to the development of this framework to bring VIPER to the masses.
 
-## _“Simplicity is the ultimate sophistication”_
+### _“Simplicity is the ultimate sophistication”_
 
 This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under a hundred lines of code. Check out `VIPER.swift`. 
 
@@ -74,11 +83,11 @@ This framework leverages a combination of generics, static scopes and functional
 
 All this results in a VIPER architecture implementation that's simple and sophisticated. For that reason, it's simply called "VIPER".
 
-## What is an Ouroboros?
+### What is an Ouroboros?
 
 It's a uni-directional viper, as emblazened on the logo.
 
-# Acknowledgements
+## Acknowledgements
 
 - [Yan Heere](https://www.instagram.com/tattoos_by_yan/) for swiftly designing the delightful Ouroboros logo in Swift fashion.
 
