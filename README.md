@@ -21,14 +21,14 @@ VIPER is a lightweight [software architecture](https://martinfowler.com/architec
 
 ## Installation
 
-VIPER is only available as a Swift Package.
+In true Swift fashion, VIPER is only available as a Swift Package.
 
 ### Swift Package Manager
 
 Add the following to your `Package.swift`'s `dependencies:` array:
 
 ```swift
-.package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.3.0"),
+.package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.4.1"),
 ```
 
 ### Xcode
@@ -51,6 +51,8 @@ $ swift run viper-tools`
 $ swift run viper-tools generate MyModule ~/Desktop/ --os macOS --verbose
 ```
 
+- You can use the `-d false` argument to generate files without a directory. This is very useful when grouping your VIPER modules into Swift Packages in your project.
+
 ## About VIPER
 
 VIPER divides application logic into distinct components of responsibility: 
@@ -61,7 +63,7 @@ VIPER divides application logic into distinct components of responsibility:
 - `Entity`: entity logic, maintained by repositories & services;
 - `Router`: navigation logic, which lives in the same realm as the view.
 
-Conceptually, these five components form a collective `Module`, synonymous with a single screen in your iOS application. The lifecycle of each module is visually represented by the `View`, which holds reference to all components. These components communicate with one another in an orchestrated order, and once the `View` dismisses, the lifecycle ends. The resulting code is clear, testable, modular and scalable with large teams.
+Conceptually, these five components form a collective `Module`, synonymous with a single screen in your iOS application. The lifecycle of each module is visually represented by the `View`, which indirectly holds reference to all components. These components communicate with one another in an orchestrated order, and once the `View` dismisses, the lifecycle ends. The resulting code is clear, testable, modular and scalable with large teams.
 
 The VIPER manifesto isn't without its flaws:
 - The `Router`'s role wasn't clearly defined, making it difficult to implement. VIPER intended to solve the _Assembler Problem_ by enabling the `Router` to assemble VIPER modules. But this arrangement jeopardises the Single Responsibility Principle as it already takes responsibility for navigation. And speaking of navigation, the `Router`'s task to pass information between VIPER modules was also left in the dark.
@@ -72,7 +74,7 @@ There are numerous implementations out in the wild that try to meet these requir
 
 ### _“Simplicity is the ultimate sophistication”_
 
-This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under a hundred lines of code. Check out `VIPER.swift`. 
+This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under a hundred lines of code. Check out [`VIPER.swift`](https://github.com/thomverbeek/VIPER/blob/master/Sources/VIPER/VIPER.swift). 
 
 - [x] It allows the compiler to help guide beginners, yet provides swiss-army flexibility to advancers.
 - [x] It fits VIPER components together like lock and key, without needing to force-cast between types.
