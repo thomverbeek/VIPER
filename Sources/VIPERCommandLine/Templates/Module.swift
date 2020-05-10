@@ -26,14 +26,14 @@ import \(framework)
 
 import VIPER
         
-public protocol Dependencies {
+public protocol Resolver {
     
 }
 
 public enum \(moduleName) {
 
     public func assemble(entities: Entities, resolver: Resolver) -> \(view) {
-        return VIPERModule<View, Interactor<Router>, Presenter, Router>.assemble(entities: entities, resolver: Resolver)
+        return VIPERModule<View, Interactor<Router>, Presenter, Router>.assemble(entities: entities, resolver: resolver)
     }
 
     public struct Entities {
