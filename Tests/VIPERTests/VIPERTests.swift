@@ -15,73 +15,82 @@ class VIPERTests: XCTestCase {
         var count: Int
     }
     
+    enum UserInteraction {
+        case select(String)
+    }
+    
+    enum Navigation {
+        case presentSomething
+    }
+    
     struct ViewModel {
         var title: String
     }
     
     class View: NSObject, VIPERView {
-
-        let interactor: Interactor<Router>
+        
+        let interactor = PassthroughSubject<UserInteraction, Never>()
         var viewModel: ViewModel
-        
-        required init(interactor: Interactor<Router>, viewModel: ViewModel) {
-            self.interactor = interactor
-            self.viewModel = viewModel
+
+        required init(input: ViewModel) {
+            self.viewModel = input
         }
         
-        func update(with viewModel: ViewModel) {
-            self.viewModel = viewModel
+        func receive(input: ViewModel) {
+            self.viewModel = input
         }
-        
+                
     }
     
     class Presenter: VIPERPresenter {
         
-        static func map(presenterModel: PresenterModel) -> ViewModel {
-            return ViewModel(title: "\(presenterModel.count)")
+        static func map(input: PresenterModel) -> ViewModel {
+            return ViewModel(title: "\(input.count)")
         }
         
     }
     
-    class Interactor<Router>: VIPERInteractor {
+    class Interactor: VIPERInteractor {
         
         private var values: [String] {
             didSet {
-                output.send(Self.generatePresenterModel(values: values))
+                presenter.send(Self.generatePresenterModel(values: values))
             }
         }
 
-        let router: Router
-        var output: CurrentValueSubject<PresenterModel, Never>
-
-        required init(entities: Entities, router: Router) {
+        let presenter: CurrentValueSubject<PresenterModel, Never>
+        let router = PassthroughSubject<Navigation, Never>()
+        
+        required init(entities: Entities) {
             values = entities.values
-            self.router = router
-            output = CurrentValueSubject(Self.generatePresenterModel(values: values))
+            presenter = .init(Self.generatePresenterModel(values: values))
         }
-
+        
         private static func generatePresenterModel(values: [String]) -> PresenterModel {
             return PresenterModel(count: values.count)
         }
 
-        func select(string: String) {
-            values.append(string)
-        }
-        
-    }
-    
-    class Router: VIPERRouter<Builder, View> {
-        
-        var expectation: XCTestExpectation?
-        
-        override func viewDidChange() {
-            super.viewDidChange()
-            
-            DispatchQueue.main.async {
-                self.expectation?.fulfill()
+        func receive(userInteraction: UserInteraction) {
+            switch userInteraction {
+            case let .select(string):
+                values.append(string)
             }
         }
+                
+    }
+    
+    class Router: NSObject, VIPERRouter {
+
+        typealias View = VIPERTests.View
         
+        required init(builder: Builder) {
+            
+        }
+        
+        func receive(navigation: Navigation) {
+            
+        }
+                
     }
 
 }
@@ -92,28 +101,27 @@ extension VIPERTests {
         // arrange
         var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), builder: .init()))
 
-        weak var view = components?.view
+        var view = components?.view // view keeps entire module alive
         weak var interactor = components?.interactor
         weak var router = components?.router
 
-        XCTAssert(view === components?.router.view)
-        XCTAssert(interactor === components?.view.interactor)
-        XCTAssert(router === components?.interactor.router)
+        components = nil
 
         XCTAssertNotNil(view)
         XCTAssertNotNil(interactor)
         XCTAssertNotNil(router)
-        
+        XCTAssertEqual(view, router?.view)
+        XCTAssertNotNil(view?.interactionSubscription)
+        XCTAssertNotNil(view?.presentationSubscription)
+        XCTAssertNotNil(view?.navigationSubscription)
+
         // act
-        router?.expectation = expectation(description: "View changed")
-        components = nil
+        view = nil
 
         // assert
-        waitForExpectations(timeout: 1) { _ in
-            XCTAssertNil(view)
-            XCTAssertNil(interactor)
-            XCTAssertNil(router)
-        }
+        XCTAssertNil(view)
+        XCTAssertNil(interactor)
+        XCTAssertNil(router)
     }
 
     func testDataFlow() {
@@ -121,7 +129,7 @@ extension VIPERTests {
         let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), builder: .init())
         XCTAssertEqual(view.viewModel.title, "3")
 
-        view.interactor.select(string: "four")
+        view.interactor.send(.select("four"))
         XCTAssertEqual(view.viewModel.title, "4")
     }
 

@@ -1,5 +1,13 @@
 import Combine
 import Foundation
+import ObjectiveC
+
+private struct Key {
+    static var interaction = "VIPER.interaction"
+    static var presentation = "VIPER.presentation"
+    static var navigation = "VIPER.navigation"
+    static var view = "VIPER.view"
+}
 
 /**
  A VIPER View represents the UI logic of your screen.
@@ -11,17 +19,18 @@ import Foundation
  */
 public protocol VIPERView {
     
-    associatedtype Interactor
-    associatedtype ViewModel
+    associatedtype Input
+    associatedtype UserInteraction
+    
+    var interactor: PassthroughSubject<UserInteraction, Never> { get }
     
     /**
-     Initialise a view with an interactor and view model.
+     Initialise a view with a view model.
      
      - Parameters:
-        - interactor: An object to notify regarding any user interaction.
         - viewModel: An object that conveys view state information.
      */
-    init(interactor: Interactor, viewModel: ViewModel)
+    init(input: Input)
     
     /**
      Updates the view with a view model.
@@ -29,7 +38,7 @@ public protocol VIPERView {
      - Parameters:
         - viewModel:An object that conveys view state information.
      */
-    func update(with viewModel: ViewModel)
+    func receive(input: Input)
 
 }
 
@@ -43,19 +52,22 @@ public protocol VIPERView {
 public protocol VIPERInteractor {
     
     associatedtype Entities
-    associatedtype Router
-    associatedtype PresenterModel
+    associatedtype Navigation
+    associatedtype Presentation
+    associatedtype UserInteraction
     
     /// Used to broadcast state information for Presenters to consume.
-    var output: CurrentValueSubject<PresenterModel, Never> { get }
+    var presenter: CurrentValueSubject<Presentation, Never> { get }
+    /// Used to broadcast state information for Routers to consume.
+    var router: PassthroughSubject<Navigation, Never> { get }
     
     /**
      - Parameters:
         - Entities: Services and repositories for the Interactor to depend on.
-        - Router: An object to handle navigation logic.
-        - PresenterModel: An object that conveys state information.
      */
-    init(entities: Entities, router: Router)
+    init(entities: Entities)
+    
+    func receive(userInteraction: UserInteraction)
     
 }
 
@@ -66,17 +78,17 @@ public protocol VIPERInteractor {
  */
 public protocol VIPERPresenter {
 
-    associatedtype PresenterModel
-    associatedtype ViewModel
+    associatedtype Input
+    associatedtype Output
     
     /**
-     Maps business logic from the Interactor into presentation logic for the View to consume.
+     Maps presentation logic from the Interactor into display logic for the View to consume.
      
      - Parameters:
-        - presenterModel: an object that conveys state information.
-     - Returns: A view model that conveys view state information.
+        - presentation: an object that conveys presentation logic information.
+     - Returns: An object that conveys display logic information.
      */
-    static func map(presenterModel: PresenterModel) -> ViewModel
+    static func map(input: Input) -> Output
     
 }
 
@@ -89,24 +101,16 @@ public protocol VIPERPresenter {
  Routers need to hold a weak reference to the view. They are therefore a class as opposed to a protocol.
  Consequentially, they're also designated to hold the reference to the module's data flow subscription.
  */
-open class VIPERRouter<Builder, View: AnyObject>: NSObject {
-    
-    /// A weak reference to the view of the module. The View provides a UI context for the Router to
-    /// configure and navigate from.
-    public weak var view: View? {
-        didSet {
-            viewDidChange()
-        }
-    }
-    
-    fileprivate var subscription: AnyCancellable?
-    
+public protocol VIPERRouter {
+
     /**
      An object that can construct dependencies on behalf of the Router. The builder is
      used by the router to instantiate other modules; typically a dependency injection
      container.
      */
-    public let builder: Builder
+    associatedtype Builder
+    associatedtype Navigation
+    associatedtype View
 
     /**
      Initialises the Router with a Builder.
@@ -116,19 +120,21 @@ open class VIPERRouter<Builder, View: AnyObject>: NSObject {
                     used by the router to instantiate other modules; typically a dependency injection
                     container.
      */
-    required public init(builder: Builder) {
-        self.builder = builder
+    init(builder: Builder)
+
+    func receive(navigation: Navigation)
+}
+
+public extension VIPERRouter where Self: NSObject {
+    
+    var view: View? {
+        get {
+            objc_getAssociatedObject(self, &Key.view) as? View
+        }
+        set {
+            objc_setAssociatedObject(self, &Key.view, newValue, .OBJC_ASSOCIATION_ASSIGN)
+        }
     }
-
-    /**
-     Called after the view has changed.
-
-     This method is invoked when a view is assigned to this Router or when said weakly-referenced
-     view is deallocated. Routers override this method to configure their view.
-
-     The default implementation does nothing.
-     */
-    open func viewDidChange() {}
 
 }
 
@@ -149,12 +155,13 @@ open class VIPERRouter<Builder, View: AnyObject>: NSObject {
  communicate in identical manner, regardless of whether the assembly is for production or testing. It is
  therefore a final class.
  */
-public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router>
+public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter & NSObject>
     where
-    Interactor == View.Interactor,
-    Interactor.Router == Router,
-    Presenter.ViewModel == View.ViewModel,
-    Presenter.PresenterModel == Interactor.PresenterModel
+    Interactor.Presentation == Presenter.Input,
+    Interactor.Navigation == Router.Navigation,
+    Interactor.UserInteraction == View.UserInteraction,
+    Presenter.Output == View.Input,
+    View == Router.View
 {
 
     /**
@@ -171,16 +178,25 @@ public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInt
                     container.
      - Returns:     VIPER components configured according to the VIPER assembly criteria.
      */
-    internal static func components<Builder>(entities: Interactor.Entities, builder: Builder) -> (view: View, interactor: Interactor, router: Router) where Router: VIPERRouter<Builder, View> {
+    internal static func components(entities: Interactor.Entities, builder: Router.Builder) -> (view: View, interactor: Interactor, router: Router) {
         let router = Router(builder: builder)
-        let interactor = Interactor(entities: entities, router: router)
-        let view = View(interactor: interactor, viewModel: Presenter.map(presenterModel: interactor.output.value))
+        let interactor = Interactor(entities: entities)
+        let view = View(input: Presenter.map(input: interactor.presenter.value))
 
-        router.view = view
-        router.subscription = interactor.output.sink { [weak view] presenterModel in
-            view?.update(with: Presenter.map(presenterModel: presenterModel))
+        view.interactionSubscription = view.interactor.sink { [interactor] userInteraction in
+            interactor.receive(userInteraction: userInteraction)
+        }
+        
+        view.presentationSubscription = interactor.presenter.sink { [weak view] presentation in
+            view?.receive(input: Presenter.map(input: presentation))
+        }
+        
+        view.navigationSubscription = interactor.router.sink { [router] navigation in
+            router.receive(navigation: navigation)
         }
 
+        router.view = view
+        
         return (view: view, interactor: interactor, router: router)
     }
     
@@ -198,8 +214,39 @@ public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInt
                     container.
      - Returns:     A view configured according to the VIPER assembly criteria.
      */
-    public static func assemble<Builder>(entities: Interactor.Entities, builder: Builder) -> View where Router: VIPERRouter<Builder, View> {
+    public static func assemble(entities: Interactor.Entities, builder: Router.Builder) -> View {
         return components(entities: entities, builder: builder).view
     }
 
+}
+
+internal extension NSObject {
+
+    var interactionSubscription: AnyCancellable? {
+        get {
+            objc_getAssociatedObject(self, &Key.interaction) as? AnyCancellable
+        }
+        set {
+            objc_setAssociatedObject(self, &Key.interaction, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+
+    var presentationSubscription: AnyCancellable? {
+        get {
+            objc_getAssociatedObject(self, &Key.presentation) as? AnyCancellable
+        }
+        set {
+            objc_setAssociatedObject(self, &Key.presentation, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+
+    var navigationSubscription: AnyCancellable? {
+        get {
+            objc_getAssociatedObject(self, &Key.navigation) as? AnyCancellable
+        }
+        set {
+            objc_setAssociatedObject(self, &Key.navigation, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
 }
