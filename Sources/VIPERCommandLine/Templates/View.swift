@@ -23,6 +23,7 @@ struct View: Template {
         return
 """
 import \(framework)
+import Combine
 
 import VIPER
         
@@ -30,11 +31,10 @@ extension \(moduleName) {
 
     class View: \(view), VIPERView {
         
-        private let interactor: Interactor<Router>
+        let interactor = PassthroughSubject<UserInteraction, Never>()
         private var viewModel: ViewModel
         
-        required init(interactor: Interactor<Router>, viewModel: ViewModel) {
-            self.interactor = interactor
+        required init(input viewModel: ViewModel) {
             self.viewModel = viewModel
             super.init(nibName: nil, bundle: nil)
         }
@@ -47,11 +47,11 @@ extension \(moduleName) {
             super.viewDidLoad()
             
             DispatchQueue.main.async { [unowned self] in
-                self.update(with: self.viewModel)
+                self.receive(input: self.viewModel)
             }
         }
         
-        func update(with viewModel: ViewModel) {
+        func receive(input viewModel: ViewModel) {
             defer {
                 self.viewModel = viewModel
             }

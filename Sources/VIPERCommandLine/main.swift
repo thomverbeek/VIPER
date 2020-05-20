@@ -22,7 +22,7 @@ struct Generate: ParsableCommand {
     
     private var destination: URL {
         var url = URL(fileURLWithPath: output)
-        if directory {
+        if !excludeDirectory {
             url.appendPathComponent(moduleName)
         }
         return url
@@ -41,8 +41,8 @@ struct Generate: ParsableCommand {
     @Option(default: .iOS, help: "The OS for the generated module. [iOS,macOS,tvOS]")
     private var os: OperatingSystem
 
-    @Option(name: .short, default: true, help: "Creates a new directory for generated files.")
-    private var directory: Bool
+    @Flag(help: "Don't create a new directory for generated files.")
+    private var excludeDirectory: Bool
 
     @Flag(name: .shortAndLong, help: "Show extra logging for debugging purposes.")
     private var verbose: Bool

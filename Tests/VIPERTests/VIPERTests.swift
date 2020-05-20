@@ -83,8 +83,10 @@ class VIPERTests: XCTestCase {
 
         typealias View = VIPERTests.View
         
+        let builder: Builder
+        
         required init(builder: Builder) {
-            
+            self.builder = builder
         }
         
         func receive(navigation: Navigation) {

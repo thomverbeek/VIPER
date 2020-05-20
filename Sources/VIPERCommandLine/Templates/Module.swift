@@ -43,6 +43,14 @@ public enum \(moduleName) {
         }
         
     }
+    
+    enum UserInteraction {
+        
+    }
+    
+    enum Navigation {
+        
+    }
         
     struct PresenterModel {
         

@@ -6,7 +6,6 @@ struct Interactor: Template {
         return
 """
 import Combine
-import Foundation
 
 import VIPER
 
@@ -14,16 +13,19 @@ extension \(moduleName) {
 
     class Interactor<Router>: VIPERInteractor {
         
-        private let router: Router
-        private(set) var output: CurrentValueSubject<PresenterModel, Never>
+        let presenter: CurrentValueSubject<PresenterModel, Never>
+        let router = PassthroughSubject<Navigation, Never>()
         
-        required init(entities: Entities, router: Router) {
-            self.router = router
-            output = .init(Self.generatePresenterModel())
+        required init(entities: Entities) {
+            presenter = .init(Self.generatePresenterModel())
         }
         
         private static func generatePresenterModel() -> PresenterModel {
             return PresenterModel()
+        }
+        
+        func receive(userInteraction: UserInteraction) {
+            
         }
         
     }

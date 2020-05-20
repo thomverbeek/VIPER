@@ -44,7 +44,7 @@ This package comes bundled with `viper-tools`, a command line utility.
 - Open up Terminal, `cd` into this Swift package, and run the following command:
 
 ```bash
-$ swift run viper-tools`
+$ swift run viper-tools
 ```
 
 - This tool is configurable with subcommands. Use the `generate` subcommand to generate a new VIPER module. For example, to generate a module called "MyModule" for macOS on the Desktop:
@@ -53,7 +53,7 @@ $ swift run viper-tools`
 $ swift run viper-tools generate MyModule ~/Desktop/ --os macOS --verbose
 ```
 
-- You can use the `-d false` argument to generate files without a directory. This is very useful when grouping your VIPER modules into Swift Packages in your project.
+- You can use the `--exclude-directory` flag to generate files without a directory. This is very useful when grouping your VIPER modules into Swift Packages in your project.
 
 ## About VIPER
 

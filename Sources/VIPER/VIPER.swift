@@ -56,9 +56,9 @@ public protocol VIPERInteractor {
     associatedtype Presentation
     associatedtype UserInteraction
     
-    /// Used to broadcast state information for Presenters to consume.
+    /// Used to broadcast presentation information for Presenters to consume.
     var presenter: CurrentValueSubject<Presentation, Never> { get }
-    /// Used to broadcast state information for Routers to consume.
+    /// Used to broadcast navigation information for Routers to consume.
     var router: PassthroughSubject<Navigation, Never> { get }
     
     /**
@@ -112,6 +112,8 @@ public protocol VIPERRouter {
     associatedtype Navigation
     associatedtype View
 
+    var builder: Builder { get }
+    
     /**
      Initialises the Router with a Builder.
      
