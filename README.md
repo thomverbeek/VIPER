@@ -30,7 +30,7 @@ In true Swift fashion, VIPER is only available as a Swift Package.
 Add the following to your `Package.swift`'s `dependencies:` array:
 
 ```swift
-.package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.4.1"),
+.package(url: "git@github.com:thomverbeek/VIPER.git", from: "0.5.1"),
 ```
 
 ### Xcode
