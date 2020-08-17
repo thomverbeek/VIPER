@@ -82,7 +82,7 @@ This framework leverages a combination of generics, static scopes and functional
 - [x] It fits VIPER components together like lock and key, without needing to force-cast between types.
 - [x] It automates concepts like assembly and weak relationships so you don't have to.
 - [x] It extracts assembly responsibility from the `Router` and grants it to the `Module`.
-- [x] It uses `Entities` to define the dependencies of an `Interactor`, and `Resolver` to provide dependency injection to the `Router` for navigation.
+- [x] It uses `Entities` to define the dependencies of an `Interactor`, and `Builder` to provide dependency injection to the `Router` for navigation.
 - [x] It designates the `Interactor` as the holder of state, and exchanges the `Presenter` with the `Interactor` in the assembly. This allows a uni-directional data flow from `View` to `Interactor` to `Presenter` to `View`, more closely in line with the Clean Architecture.
 
 All this results in a VIPER architecture implementation that's simple and sophisticated. For that reason, it's simply called "VIPER".
