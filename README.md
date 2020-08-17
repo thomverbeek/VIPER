@@ -89,7 +89,7 @@ All this results in a VIPER architecture implementation that's simple and sophis
 
 ### What is an Ouroboros?
 
-It's a uni-directional viper, as emblazened on the logo.
+It's a uni-directional viper, as emblazoned on the logo.
 
 ## Acknowledgements
 
