@@ -79,9 +79,7 @@ class VIPERTests: XCTestCase {
                 
     }
     
-    class Router: NSObject, VIPERRouter {
-
-        typealias View = VIPERTests.View
+    class Router: VIPERRouter {
         
         let builder: Builder
         
@@ -89,7 +87,7 @@ class VIPERTests: XCTestCase {
             self.builder = builder
         }
         
-        func receive(navigation: Navigation) {
+        func receive(navigation: Navigation, for view: View) {
             
         }
                 
@@ -112,7 +110,6 @@ extension VIPERTests {
         XCTAssertNotNil(view)
         XCTAssertNotNil(interactor)
         XCTAssertNotNil(router)
-        XCTAssertEqual(view, router?.view)
         XCTAssertNotNil(view?.interactionSubscription)
         XCTAssertNotNil(view?.presentationSubscription)
         XCTAssertNotNil(view?.navigationSubscription)

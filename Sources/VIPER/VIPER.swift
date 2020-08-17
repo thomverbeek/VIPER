@@ -97,9 +97,6 @@ public protocol VIPERPresenter {
 
  As the Router lives in the same realm as the View, it is empowered to configure the view if needed. It also
  uses the view as a context to present new modules.
- 
- Routers need to hold a weak reference to the view. They are therefore a class as opposed to a protocol.
- Consequentially, they're also designated to hold the reference to the module's data flow subscription.
  */
 public protocol VIPERRouter {
 
@@ -123,21 +120,22 @@ public protocol VIPERRouter {
                     container.
      */
     init(builder: Builder)
+    
+    /**
+     Invoked when the view is assembled. Override this to configure the view.
+    */
+    func viewDidLoad(view: View)
 
-    func receive(navigation: Navigation)
+    /**
+     Invoked when the router receives a navigation instruction.
+    */
+    func receive(navigation: Navigation, for view: View)
 }
 
-public extension VIPERRouter where Self: NSObject {
+public extension VIPERRouter {
     
-    var view: View? {
-        get {
-            objc_getAssociatedObject(self, &Key.view) as? View
-        }
-        set {
-            objc_setAssociatedObject(self, &Key.view, newValue, .OBJC_ASSOCIATION_ASSIGN)
-        }
-    }
-
+    func viewDidLoad(view: View) {}
+    
 }
 
 /**
@@ -157,7 +155,7 @@ public extension VIPERRouter where Self: NSObject {
  communicate in identical manner, regardless of whether the assembly is for production or testing. It is
  therefore a final class.
  */
-public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter & NSObject>
+public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter>
     where
     Interactor.Presentation == Presenter.Input,
     Interactor.Navigation == Router.Navigation,
@@ -193,11 +191,12 @@ public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInte
             view?.receive(input: Presenter.map(input: presentation))
         }
         
-        view.navigationSubscription = interactor.router.sink { [router] navigation in
-            router.receive(navigation: navigation)
+        view.navigationSubscription = interactor.router.sink { [router, weak view] navigation in
+            guard let view = view else { return }
+            router.receive(navigation: navigation, for: view)
         }
 
-        router.view = view
+        router.viewDidLoad(view: view)
         
         return (view: view, interactor: interactor, router: router)
     }
