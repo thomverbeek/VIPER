@@ -11,9 +11,7 @@ import VIPER
 
 extension \(moduleName) {
     
-    class Router: NSObject, VIPERRouter {
-
-        typealias View = \(moduleName).View
+    class Router: VIPERRouter {
             
         let builder: Builder
         
@@ -21,7 +19,7 @@ extension \(moduleName) {
             self.builder = builder
         }
         
-        func receive(navigation: Navigation) {
+        func receive(navigation: Navigation, for view: View) {
             
         }
         
