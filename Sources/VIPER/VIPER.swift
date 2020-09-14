@@ -2,13 +2,6 @@ import Combine
 import Foundation
 import ObjectiveC
 
-private struct Key {
-    static var interaction = "VIPER.interaction"
-    static var presentation = "VIPER.presentation"
-    static var navigation = "VIPER.navigation"
-    static var view = "VIPER.view"
-}
-
 /**
  A VIPER View represents the UI logic of your screen.
 
@@ -106,7 +99,15 @@ public protocol VIPERRouter {
      container.
      */
     associatedtype Builder
+    
+    /**
+     A navigation message that the router receives when instructed to navigate.
+     */
     associatedtype Navigation
+    
+    /**
+     The view associated with this Router.
+     */
     associatedtype View
 
     var builder: Builder { get }
@@ -123,11 +124,16 @@ public protocol VIPERRouter {
     
     /**
      Invoked when the view is assembled. Override this to configure the view.
+     - Parameters:
+        - view:     The view to configure.
     */
     func viewDidLoad(view: View)
 
     /**
      Invoked when the router receives a navigation instruction.
+     - Parameters:
+        - navigation: A navigation instruction for the Router to interpret and process.
+        - view: The view provided as a presentation context.
     */
     func receive(navigation: Navigation, for view: View)
 }
@@ -183,19 +189,23 @@ public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInte
         let interactor = Interactor(entities: entities)
         let view = View(input: Presenter.map(input: interactor.presenter.value))
 
-        view.interactionSubscription = view.interactor.sink { [interactor] userInteraction in
+        var subscriptions = Set<AnyCancellable>()
+
+        view.interactor.sink { [interactor] userInteraction in
             interactor.receive(userInteraction: userInteraction)
-        }
+        }.store(in: &subscriptions)
         
-        view.presentationSubscription = interactor.presenter.sink { [weak view] presentation in
+        interactor.presenter.sink { [weak view] presentation in
             view?.receive(input: Presenter.map(input: presentation))
-        }
+        }.store(in: &subscriptions)
         
-        view.navigationSubscription = interactor.router.sink { [router, weak view] navigation in
+        interactor.router.sink { [router, weak view] navigation in
             guard let view = view else { return }
             router.receive(navigation: navigation, for: view)
-        }
+        }.store(in: &subscriptions)
 
+        objc_setAssociatedObject(view, "VIPER.subscriptions", subscriptions, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
         router.viewDidLoad(view: view)
         
         return (view: view, interactor: interactor, router: router)
@@ -219,35 +229,4 @@ public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInte
         return components(entities: entities, builder: builder).view
     }
 
-}
-
-internal extension NSObject {
-
-    var interactionSubscription: AnyCancellable? {
-        get {
-            objc_getAssociatedObject(self, &Key.interaction) as? AnyCancellable
-        }
-        set {
-            objc_setAssociatedObject(self, &Key.interaction, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-    }
-
-    var presentationSubscription: AnyCancellable? {
-        get {
-            objc_getAssociatedObject(self, &Key.presentation) as? AnyCancellable
-        }
-        set {
-            objc_setAssociatedObject(self, &Key.presentation, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-    }
-
-    var navigationSubscription: AnyCancellable? {
-        get {
-            objc_getAssociatedObject(self, &Key.navigation) as? AnyCancellable
-        }
-        set {
-            objc_setAssociatedObject(self, &Key.navigation, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-    }
-    
 }

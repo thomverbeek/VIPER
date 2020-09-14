@@ -110,9 +110,6 @@ extension VIPERTests {
         XCTAssertNotNil(view)
         XCTAssertNotNil(interactor)
         XCTAssertNotNil(router)
-        XCTAssertNotNil(view?.interactionSubscription)
-        XCTAssertNotNil(view?.presentationSubscription)
-        XCTAssertNotNil(view?.navigationSubscription)
 
         // act
         view = nil
