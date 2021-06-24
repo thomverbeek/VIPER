@@ -32,20 +32,20 @@ class VIPERTests: XCTestCase {
         let interactor = PassthroughSubject<UserInteraction, Never>()
         var viewModel: ViewModel
 
-        required init(input: ViewModel) {
-            self.viewModel = input
+        required init(viewModel: ViewModel) {
+            self.viewModel = viewModel
         }
         
-        func receive(input: ViewModel) {
-            self.viewModel = input
+        func receive(viewModel: ViewModel) {
+            self.viewModel = viewModel
         }
                 
     }
     
     class Presenter: VIPERPresenter {
         
-        static func map(input: PresenterModel) -> ViewModel {
-            return ViewModel(title: "\(input.count)")
+        static func map(presenterModel: PresenterModel) -> ViewModel {
+            return ViewModel(title: "\(presenterModel.count)")
         }
         
     }

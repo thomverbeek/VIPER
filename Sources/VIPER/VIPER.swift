@@ -12,7 +12,7 @@ import ObjectiveC
  */
 public protocol VIPERView {
     
-    associatedtype Input
+    associatedtype ViewModel
     associatedtype UserInteraction
     
     var interactor: PassthroughSubject<UserInteraction, Never> { get }
@@ -23,7 +23,7 @@ public protocol VIPERView {
      - Parameters:
         - viewModel: An object that conveys view state information.
      */
-    init(input: Input)
+    init(viewModel: ViewModel)
     
     /**
      Updates the view with a view model.
@@ -31,7 +31,7 @@ public protocol VIPERView {
      - Parameters:
         - viewModel:An object that conveys view state information.
      */
-    func receive(input: Input)
+    func receive(viewModel: ViewModel)
 
 }
 
@@ -46,11 +46,11 @@ public protocol VIPERInteractor {
     
     associatedtype Entities
     associatedtype Navigation
-    associatedtype Presentation
+    associatedtype PresenterModel
     associatedtype UserInteraction
     
     /// Used to broadcast presentation information for Presenters to consume.
-    var presenter: CurrentValueSubject<Presentation, Never> { get }
+    var presenter: CurrentValueSubject<PresenterModel, Never> { get }
     /// Used to broadcast navigation information for Routers to consume.
     var router: PassthroughSubject<Navigation, Never> { get }
     
@@ -71,8 +71,8 @@ public protocol VIPERInteractor {
  */
 public protocol VIPERPresenter {
 
-    associatedtype Input
-    associatedtype Output
+    associatedtype PresenterModel
+    associatedtype ViewModel
     
     /**
      Maps presentation logic from the Interactor into display logic for the View to consume.
@@ -81,7 +81,7 @@ public protocol VIPERPresenter {
         - presentation: an object that conveys presentation logic information.
      - Returns: An object that conveys display logic information.
      */
-    static func map(input: Input) -> Output
+    static func map(presenterModel: PresenterModel) -> ViewModel
     
 }
 
@@ -163,10 +163,10 @@ public extension VIPERRouter {
  */
 public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter>
     where
-    Interactor.Presentation == Presenter.Input,
+    Interactor.PresenterModel == Presenter.PresenterModel,
     Interactor.Navigation == Router.Navigation,
     Interactor.UserInteraction == View.UserInteraction,
-    Presenter.Output == View.Input,
+    Presenter.ViewModel == View.ViewModel,
     View == Router.View
 {
 
@@ -187,7 +187,7 @@ public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInte
     internal static func components(entities: Interactor.Entities, builder: Router.Builder) -> (view: View, interactor: Interactor, router: Router) {
         let router = Router(builder: builder)
         let interactor = Interactor(entities: entities)
-        let view = View(input: Presenter.map(input: interactor.presenter.value))
+        let view = View(viewModel: Presenter.map(presenterModel: interactor.presenter.value))
 
         var subscriptions = Set<AnyCancellable>()
 
@@ -195,8 +195,8 @@ public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInte
             interactor.receive(userInteraction: userInteraction)
         }.store(in: &subscriptions)
         
-        interactor.presenter.sink { [weak view] presentation in
-            view?.receive(input: Presenter.map(input: presentation))
+        interactor.presenter.sink { [weak view] presenterModel in
+            view?.receive(viewModel: Presenter.map(presenterModel: presenterModel))
         }.store(in: &subscriptions)
         
         interactor.router.sink { [router, weak view] navigation in
