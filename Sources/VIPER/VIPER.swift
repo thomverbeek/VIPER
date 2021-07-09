@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import ObjectiveC
 
 /**
  A VIPER View represents the UI logic of your screen.
@@ -15,7 +14,8 @@ public protocol VIPERView {
     associatedtype ViewModel
     associatedtype UserInteraction
     
-    var interactor: PassthroughSubject<UserInteraction, Never> { get }
+    var presenter: PassthroughSubject<UserInteraction, Never> { get }
+    var subscriptions: Set<AnyCancellable> { get set }
     
     /**
      Initialise a view with a view model.
@@ -25,14 +25,29 @@ public protocol VIPERView {
      */
     init(viewModel: ViewModel)
     
-    /**
-     Updates the view with a view model.
-     
-     - Parameters:
-        - viewModel:An object that conveys view state information.
-     */
-    func receive(viewModel: ViewModel)
+}
 
+/**
+ A VIPER Presenter represents the presentation logic of your screen module.
+
+ Presenters take business logic processed by the Interactor and map it into presentation logic for the view.
+ */
+public protocol VIPERPresenter {
+
+    associatedtype ViewModel
+    associatedtype PresenterModel
+    associatedtype UseCase
+    associatedtype UserInteraction
+    associatedtype Navigation
+
+    var viewModel: ViewModel { get }
+    var interactor: PassthroughSubject<UseCase, Never> { get }
+    var router: PassthroughSubject<Navigation, Never> { get }
+
+    init(presenterModel: PresenterModel)
+    
+    func receive(userInteraction: UserInteraction)
+        
 }
 
 /**
@@ -45,43 +60,18 @@ public protocol VIPERView {
 public protocol VIPERInteractor {
     
     associatedtype Entities
-    associatedtype Navigation
     associatedtype PresenterModel
-    associatedtype UserInteraction
+    associatedtype UseCase
     
-    /// Used to broadcast presentation information for Presenters to consume.
-    var presenter: CurrentValueSubject<PresenterModel, Never> { get }
-    /// Used to broadcast navigation information for Routers to consume.
-    var router: PassthroughSubject<Navigation, Never> { get }
-    
+    var presenterModel: PresenterModel { get }
+        
     /**
      - Parameters:
         - Entities: Services and repositories for the Interactor to depend on.
      */
     init(entities: Entities)
     
-    func receive(userInteraction: UserInteraction)
-    
-}
-
-/**
- A VIPER Presenter represents the presentation logic of your screen module.
-
- Presenters take business logic processed by the Interactor and map it into presentation logic for the view.
- */
-public protocol VIPERPresenter {
-
-    associatedtype PresenterModel
-    associatedtype ViewModel
-    
-    /**
-     Maps presentation logic from the Interactor into display logic for the View to consume.
-     
-     - Parameters:
-        - presentation: an object that conveys presentation logic information.
-     - Returns: An object that conveys display logic information.
-     */
-    static func map(presenterModel: PresenterModel) -> ViewModel
+    func receive(useCase: UseCase)
     
 }
 
@@ -109,8 +99,6 @@ public protocol VIPERRouter {
      The view associated with this Router.
      */
     associatedtype View
-
-    var builder: Builder { get }
     
     /**
      Initialises the Router with a Builder.
@@ -127,7 +115,7 @@ public protocol VIPERRouter {
      - Parameters:
         - view:     The view to configure.
     */
-    func viewDidLoad(view: View)
+    func configure(view: View)
 
     /**
      Invoked when the router receives a navigation instruction.
@@ -140,7 +128,7 @@ public protocol VIPERRouter {
 
 public extension VIPERRouter {
     
-    func viewDidLoad(view: View) {}
+    func configure(view: View) {}
     
 }
 
@@ -161,21 +149,24 @@ public extension VIPERRouter {
  communicate in identical manner, regardless of whether the assembly is for production or testing. It is
  therefore a final class.
  */
-public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter>
+public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInteractor, Presenter: VIPERPresenter, Router: VIPERRouter>
     where
     Interactor.PresenterModel == Presenter.PresenterModel,
-    Interactor.Navigation == Router.Navigation,
-    Interactor.UserInteraction == View.UserInteraction,
+    Interactor.UseCase == Presenter.UseCase,
+    Presenter.Navigation == Router.Navigation,
+    Presenter.UserInteraction == View.UserInteraction,
     Presenter.ViewModel == View.ViewModel,
     View == Router.View
 {
+    
+    internal typealias Components = (view: View, interactor: Interactor, presenter: Presenter, router: Router)
 
+    
+    private init() {}
+    
     /**
      Assembles a VIPER module and returns individual components for testing purposes.
-          
-     A VIPER module can assemble when the Router is a `VIPERRouter` that defines a particular type of
-     Builder.
-     
+               
      - Parameters:
         - entities: Any repositories or services that the Interactor should depend on, defined by the
                     Interactor. These repositories and services should be abstract.
@@ -184,31 +175,28 @@ public final class VIPERModule<View: VIPERView & NSObject, Interactor: VIPERInte
                     container.
      - Returns:     VIPER components configured according to the VIPER assembly criteria.
      */
-    internal static func components(entities: Interactor.Entities, builder: Router.Builder) -> (view: View, interactor: Interactor, router: Router) {
+    internal static func components(entities: Interactor.Entities, builder: Router.Builder) -> Components {
         let router = Router(builder: builder)
         let interactor = Interactor(entities: entities)
-        let view = View(viewModel: Presenter.map(presenterModel: interactor.presenter.value))
-
-        var subscriptions = Set<AnyCancellable>()
-
-        view.interactor.sink { [interactor] userInteraction in
-            interactor.receive(userInteraction: userInteraction)
-        }.store(in: &subscriptions)
+        let presenter = Presenter(presenterModel: interactor.presenterModel)
+        var view = View(viewModel: presenter.viewModel)
         
-        interactor.presenter.sink { [weak view] presenterModel in
-            view?.receive(viewModel: Presenter.map(presenterModel: presenterModel))
-        }.store(in: &subscriptions)
+        view.presenter.sink { [presenter] userInteraction in
+            presenter.receive(userInteraction: userInteraction)
+        }.store(in: &view.subscriptions)
         
-        interactor.router.sink { [router, weak view] navigation in
+        presenter.interactor.sink { [interactor] useCase in
+            interactor.receive(useCase: useCase)
+        }.store(in: &view.subscriptions)
+        
+        presenter.router.sink { [router, weak view] navigation in
             guard let view = view else { return }
             router.receive(navigation: navigation, for: view)
-        }.store(in: &subscriptions)
-
-        objc_setAssociatedObject(view, "VIPER.subscriptions", subscriptions, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }.store(in: &view.subscriptions)
         
-        router.viewDidLoad(view: view)
+        router.configure(view: view)
         
-        return (view: view, interactor: interactor, router: router)
+        return (view: view, interactor: interactor, presenter, router: router)
     }
     
     /**

@@ -8,72 +8,97 @@ class VIPERTests: XCTestCase {
     struct Builder {}
     
     struct Entities {
-        var values: [String] = ["one", "two", "three"]
+        var increment: Int
     }
     
-    struct PresenterModel {
-        var count: Int
+    class PresenterModel {
+        @Published var values: [String]
+        
+        init(values: [String]) {
+            self.values = values
+        }
     }
     
     enum UserInteraction {
-        case select(String)
+        case selectThis
+        case selectThat
+    }
+    
+    enum UseCase {
+        case loadValues
     }
     
     enum Navigation {
         case presentSomething
     }
     
-    struct ViewModel {
-        var title: String
+    class ViewModel {
+        @Published var title: String
+        @Published var rows: [String]
+        
+        init(title: String, rows: [String]) {
+            self.title = title
+            self.rows = rows
+        }
     }
     
-    class View: NSObject, VIPERView {
+    class View: VIPERView {
         
-        let interactor = PassthroughSubject<UserInteraction, Never>()
+        let presenter = PassthroughSubject<UserInteraction, Never>()
+        var subscriptions = Set<AnyCancellable>()
         var viewModel: ViewModel
 
         required init(viewModel: ViewModel) {
             self.viewModel = viewModel
         }
-        
-        func receive(viewModel: ViewModel) {
-            self.viewModel = viewModel
-        }
-                
+                        
     }
     
     class Presenter: VIPERPresenter {
         
-        static func map(presenterModel: PresenterModel) -> ViewModel {
-            return ViewModel(title: "\(presenterModel.count)")
+        let interactor = PassthroughSubject<UseCase, Never>()
+        let router = PassthroughSubject<Navigation, Never>()
+        var viewModel: ViewModel
+        
+        private var subscriptions = Set<AnyCancellable>()
+        
+        required init(presenterModel: PresenterModel) {
+            viewModel = ViewModel(title: String(presenterModel.values.count), rows: presenterModel.values)
+            
+            presenterModel.$values.sink { [viewModel] values in
+                viewModel.title = String(values.count)
+                viewModel.rows = values
+            }.store(in: &subscriptions)
+        }
+        
+        func receive(userInteraction: UserInteraction) {
+            switch userInteraction {
+            case .selectThis:
+                interactor.send(.loadValues)
+            case .selectThat:
+                router.send(.presentSomething)
+            }
         }
         
     }
     
     class Interactor: VIPERInteractor {
         
-        private var values: [String] {
-            didSet {
-                presenter.send(Self.generatePresenterModel(values: values))
-            }
-        }
-
-        let presenter: CurrentValueSubject<PresenterModel, Never>
-        let router = PassthroughSubject<Navigation, Never>()
+        var presenterModel: PresenterModel
+        
+        private let increment: Int
         
         required init(entities: Entities) {
-            values = entities.values
-            presenter = .init(Self.generatePresenterModel(values: values))
+            increment = entities.increment
+            let values = (0..<increment).map{ String($0) }
+            presenterModel = .init(values: values)
         }
         
-        private static func generatePresenterModel(values: [String]) -> PresenterModel {
-            return PresenterModel(count: values.count)
-        }
-
-        func receive(userInteraction: UserInteraction) {
-            switch userInteraction {
-            case let .select(string):
-                values.append(string)
+        func receive(useCase: UseCase) {
+            switch useCase {
+            case .loadValues:
+                let values = (presenterModel.values.count..<presenterModel.values.count + increment).map{ String($0) }
+                presenterModel.values = presenterModel.values + values
             }
         }
                 
@@ -81,14 +106,17 @@ class VIPERTests: XCTestCase {
     
     class Router: VIPERRouter {
         
-        let builder: Builder
+        var presentedSomething = false
         
         required init(builder: Builder) {
-            self.builder = builder
+
         }
         
         func receive(navigation: Navigation, for view: View) {
-            
+            switch navigation {
+            case .presentSomething:
+                presentedSomething = true
+            }
         }
                 
     }
@@ -99,9 +127,10 @@ extension VIPERTests {
 
     func testAssembly() {
         // arrange
-        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(), builder: .init()))
-
+        var components = Optional(VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(increment: 3), builder: .init()))
+        
         var view = components?.view // view keeps entire module alive
+        weak var presenter = components?.presenter
         weak var interactor = components?.interactor
         weak var router = components?.router
 
@@ -109,6 +138,7 @@ extension VIPERTests {
 
         XCTAssertNotNil(view)
         XCTAssertNotNil(interactor)
+        XCTAssertNotNil(presenter)
         XCTAssertNotNil(router)
 
         // act
@@ -117,16 +147,26 @@ extension VIPERTests {
         // assert
         XCTAssertNil(view)
         XCTAssertNil(interactor)
+        XCTAssertNil(presenter)
         XCTAssertNil(router)
     }
 
     func testDataFlow() {
         // arrange
-        let view = VIPERModule<View, Interactor, Presenter, Router>.assemble(entities: .init(), builder: .init())
+        let components = VIPERModule<View, Interactor, Presenter, Router>.components(entities: .init(increment: 3), builder: .init())
+        let view = components.view; let router = components.router
         XCTAssertEqual(view.viewModel.title, "3")
+        XCTAssertEqual(view.viewModel.rows, ["0", "1", "2"])
+        XCTAssertFalse(router.presentedSomething)
 
-        view.interactor.send(.select("four"))
-        XCTAssertEqual(view.viewModel.title, "4")
+        // act & assert
+        view.presenter.send(.selectThis)
+        XCTAssertEqual(view.viewModel.title, "6")
+        XCTAssertEqual(view.viewModel.rows, ["0", "1", "2", "3", "4", "5"])
+        
+        // act & assert
+        view.presenter.send(.selectThat)
+        XCTAssertTrue(router.presentedSomething)
     }
 
     static var allTests = [
