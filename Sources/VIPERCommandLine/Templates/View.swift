@@ -31,10 +31,12 @@ extension \(moduleName) {
 
     class View: \(view), VIPERView {
         
-        let interactor = PassthroughSubject<UserInteraction, Never>()
-        private var viewModel: ViewModel
+        let presenter = PassthroughSubject<UserInteraction, Never>()
+        var subscriptions = Set<AnyCancellable>()
+
+        private let viewModel: ViewModel
         
-        required init(input viewModel: ViewModel) {
+        required init(viewModel: ViewModel) {
             self.viewModel = viewModel
             super.init(nibName: nil, bundle: nil)
         }
@@ -46,18 +48,9 @@ extension \(moduleName) {
         override func viewDidLoad() {
             super.viewDidLoad()
             
-            DispatchQueue.main.async { [unowned self] in
-                self.receive(input: self.viewModel)
-            }
+            // add subscriptions to viewModel here
         }
-        
-        func receive(input viewModel: ViewModel) {
-            defer {
-                self.viewModel = viewModel
-            }
-            guard isViewLoaded else { return }
-        }
-            
+
     }
 
 }
