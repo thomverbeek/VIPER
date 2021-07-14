@@ -44,7 +44,7 @@ class VIPERTests: XCTestCase {
     
     class View: VIPERView {
         
-        let presenter = PassthroughSubject<UserInteraction, Never>()
+        let presenter = VIPERMessage<UserInteraction>()
         var subscriptions = Set<AnyCancellable>()
         var viewModel: ViewModel
 
@@ -56,8 +56,8 @@ class VIPERTests: XCTestCase {
     
     class Presenter: VIPERPresenter {
         
-        let interactor = PassthroughSubject<UseCase, Never>()
-        let router = PassthroughSubject<Navigation, Never>()
+        let interactor = VIPERMessage<UseCase>()
+        let router = VIPERMessage<Navigation>()
         var viewModel: ViewModel
         
         private var subscriptions = Set<AnyCancellable>()

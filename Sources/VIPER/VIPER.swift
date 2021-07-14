@@ -1,10 +1,11 @@
 import Combine
 import Foundation
+import ObjectiveC
 
 /**
  A VIPER View represents the UI logic of your screen.
-
- Views receive view models to update their view state information, and notify the interactor of any user
+ 
+ Views bind to view models to update their view state information, and notify the presenter of any user
  interaction.
  
  Examples of Views include View Controllers, Windows and other UI-interface components.
@@ -14,15 +15,13 @@ public protocol VIPERView {
     associatedtype ViewModel
     associatedtype UserInteraction
     
-    var presenter: PassthroughSubject<UserInteraction, Never> { get }
-    var subscriptions: Set<AnyCancellable> { get set }
+    /// Used to notify the presenter that a user interaction occurred.
+    var presenter: VIPERMessage<UserInteraction> { get }
     
-    /**
-     Initialise a view with a view model.
-     
-     - Parameters:
-        - viewModel: An object that conveys view state information.
-     */
+    /// Initialises a View with a ViewModel.
+    ///
+    /// Use this entrypoint to bind to the `viewModel` to be notified of view state changes.
+    /// - Parameter viewModel: A model that conveys view state information.
     init(viewModel: ViewModel)
     
 }
@@ -30,7 +29,9 @@ public protocol VIPERView {
 /**
  A VIPER Presenter represents the presentation logic of your screen module.
 
- Presenters take business logic processed by the Interactor and map it into presentation logic for the view.
+ Whenever user interactions take place, the Presenter can decide to send a use case request to the Interactor
+ or notify a Router when it's time to navigate. Presenters take business logic processed by the Interactor and
+ map it into presentation logic for the view.
  */
 public protocol VIPERPresenter {
 
@@ -39,23 +40,37 @@ public protocol VIPERPresenter {
     associatedtype UseCase
     associatedtype UserInteraction
     associatedtype Navigation
-
+    
+    /// A model that conveys view state information. This is consumed by the View.
     var viewModel: ViewModel { get }
-    var interactor: PassthroughSubject<UseCase, Never> { get }
-    var router: PassthroughSubject<Navigation, Never> { get }
-
+    /// A message to perform a use case. This is relayed to the Interactor.
+    var interactor: VIPERMessage<UseCase> { get }
+    /// A message to perform a navigation action. This is relayed to the Router.
+    var router: VIPERMessage<Navigation> { get }
+    
+    /// Initialises a Presenter with a PresenterModel.
+    ///
+    /// Use this entrypoint to bind to the `presenterModel` to be notified of state changes.
+    /// - Parameter presenterModel: A model that conveys state information.
     init(presenterModel: PresenterModel)
     
+    /// Used to notify the Presenter that a user interaction took place in the View.
+    /// - Parameter userInteraction: A user interaction message, emitted by the View.
     func receive(userInteraction: UserInteraction)
         
+}
+
+public extension VIPERPresenter where UserInteraction == Void {
+    
+    func receive(userInteraction: UserInteraction) {}
+
 }
 
 /**
  A VIPER Interactor represents the business logic of your screen module.
  
- Interactors respond to user interaction events and communicate with entities to determine the state of the
- module. They broadcast state information to Presenters to consume, and notify routers when it's time to
- navigate.
+ Interactors respond to use case requests and communicate with entities to determine the state of the
+ module. They broadcast state information to Presenters to consume.
  */
 public protocol VIPERInteractor {
     
@@ -73,6 +88,12 @@ public protocol VIPERInteractor {
     
     func receive(useCase: UseCase)
     
+}
+
+public extension VIPERInteractor where UseCase == Void {
+    
+    func receive(useCase: UseCase) {}
+
 }
 
 /**
@@ -132,6 +153,12 @@ public extension VIPERRouter {
     
 }
 
+public extension VIPERRouter where Navigation == Void {
+    
+    func receive(navigation: Navigation, for view: View) {}
+    
+}
+
 /**
  A VIPER Module handles the assembly logic of your screen module.
 
@@ -160,7 +187,6 @@ public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInt
 {
     
     internal typealias Components = (view: View, interactor: Interactor, presenter: Presenter, router: Router)
-
     
     private init() {}
     
@@ -179,20 +205,24 @@ public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInt
         let router = Router(builder: builder)
         let interactor = Interactor(entities: entities)
         let presenter = Presenter(presenterModel: interactor.presenterModel)
-        var view = View(viewModel: presenter.viewModel)
+        let view = View(viewModel: presenter.viewModel)
         
-        view.presenter.sink { [presenter] userInteraction in
+        var subscriptions = Set<AnyCancellable>()
+
+        view.presenter.subject.sink { [presenter] userInteraction in
             presenter.receive(userInteraction: userInteraction)
-        }.store(in: &view.subscriptions)
+        }.store(in: &subscriptions)
         
-        presenter.interactor.sink { [interactor] useCase in
+        presenter.interactor.subject.sink { [interactor] useCase in
             interactor.receive(useCase: useCase)
-        }.store(in: &view.subscriptions)
+        }.store(in: &subscriptions)
         
-        presenter.router.sink { [router, weak view] navigation in
+        presenter.router.subject.sink { [router, weak view] navigation in
             guard let view = view else { return }
             router.receive(navigation: navigation, for: view)
-        }.store(in: &view.subscriptions)
+        }.store(in: &subscriptions)
+        
+        objc_setAssociatedObject(view, "VIPER.subscriptions", subscriptions, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         
         router.configure(view: view)
         
@@ -217,4 +247,14 @@ public final class VIPERModule<View: VIPERView & AnyObject, Interactor: VIPERInt
         return components(entities: entities, builder: builder).view
     }
 
+}
+
+public final class VIPERMessage<Message> {
+    
+    fileprivate let subject = PassthroughSubject<Message, Never>()
+    
+    func send(_ message: Message) {
+        subject.send(message)
+    }
+    
 }
