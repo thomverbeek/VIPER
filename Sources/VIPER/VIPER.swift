@@ -1,6 +1,12 @@
 import Foundation
 import ObjectiveC
 
+public typealias VIPERModule = Module
+public typealias VIPERView = View
+public typealias VIPERInteractor = Interactor
+public typealias VIPERPresenter = Presenter
+public typealias VIPERRouter = Router
+
 /**
  A VIPER View represents the UI logic of your screen.
  
