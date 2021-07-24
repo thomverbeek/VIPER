@@ -5,15 +5,13 @@ struct Interactor: Template {
     static func contents(moduleName: String, operatingSystem: OperatingSystem) -> String {
         return
 """
-import Combine
-
 import VIPER
 
 extension \(moduleName) {
 
-    class Interactor: VIPERInteractor {
+    class Interactor: VIPER.Interactor {
         
-        let presenterModel: Example.PresenterModel
+        let presenterModel: PresenterModel
         
         required init(entities: Entities) {
             self.presenterModel = PresenterModel()

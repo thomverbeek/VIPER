@@ -23,16 +23,14 @@ struct View: Template {
         return
 """
 import \(framework)
-import Combine
 
 import VIPER
         
 extension \(moduleName) {
 
-    class View: \(view), VIPERView {
+    class View: \(view), VIPER.View {
         
-        let presenter = PassthroughSubject<UserInteraction, Never>()
-        var subscriptions = Set<AnyCancellable>()
+        typealias UserInteraction = \(moduleName).UserInteraction
 
         private let viewModel: ViewModel
         
@@ -48,7 +46,7 @@ extension \(moduleName) {
         override func viewDidLoad() {
             super.viewDidLoad()
             
-            // add subscriptions to viewModel here
+            // Bind to the viewModel
         }
 
     }
