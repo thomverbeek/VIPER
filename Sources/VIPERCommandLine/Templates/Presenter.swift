@@ -9,12 +9,23 @@ import VIPER
 
 extension \(moduleName) {
 
-    class Presenter: VIPERPresenter {
-            
-        static func map(input presenterModel: PresenterModel) -> ViewModel {
-            return ViewModel()
+    class Presenter: VIPER.Presenter {
+        
+        typealias UseCase = \(moduleName).UseCase
+        typealias Navigation = \(moduleName).Navigation
+
+        let viewModel: ViewModel
+        
+        required init(presenterModel: PresenterModel) {
+            self.viewModel = ViewModel()
+
+            // Bind to the presenterModel
         }
         
+        func receive(userInteraction: UserInteraction) {
+            
+        }
+                
     }
 
 }

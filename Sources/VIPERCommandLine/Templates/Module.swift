@@ -33,7 +33,7 @@ public protocol Builder {
 public enum \(moduleName) {
 
     public func assemble(entities: Entities, builder: Builder) -> \(view) {
-        return VIPERModule<View, Interactor<Router>, Presenter, Router>.assemble(entities: entities, builder: builder)
+        return Module<View, Interactor, Presenter, Router>.assemble(entities: entities, builder: builder)
     }
 
     public struct Entities {
@@ -45,6 +45,10 @@ public enum \(moduleName) {
     }
     
     enum UserInteraction {
+        
+    }
+
+    enum UseCase {
         
     }
     

@@ -4,10 +4,8 @@
 
 # VIPER
 
-![Swift](https://img.shields.io/badge/swift-5.1-f16d39)
-[![iOS](https://img.shields.io/badge/iOS-13-brightgreen)](https://developer.apple.com/ios/)
-[![macOS](https://img.shields.io/badge/macos-10.15-brightgreen)](https://developer.apple.com/macos/)
-[![tvOS](https://img.shields.io/badge/tvos-13-brightgreen)](https://developer.apple.com/tvos/)
+[![Swift](https://img.shields.io/badge/swift-5.1-f16d39)](https://developer.apple.com/swift/)
+[![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20macOS%20%7C%20tvOS-lightgrey)](https://developer.apple.com/)
 [![Releases](https://img.shields.io/github/v/tag/thomverbeek/VIPER?label=release)](https://github.com/thomverbeek/VIPER/releases)
 [![Swift Package Manager](https://img.shields.io/badge/spm-compatible-hotpink)](https://swift.org/package-manager)
 
@@ -77,14 +75,14 @@ There are numerous implementations out in the wild that try to meet these requir
 
 ### _“Simplicity is the ultimate sophistication”_
 
-This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under a hundred lines of code. Check out [`VIPER.swift`](https://github.com/thomverbeek/VIPER/blob/master/Sources/VIPER/VIPER.swift). 
+This framework leverages a combination of generics, static scopes and functional reactive programming principles to distill VIPER down to a single file of under 300 lines of code, including comments. Check out [`VIPER.swift`](https://github.com/thomverbeek/VIPER/blob/master/Sources/VIPER/VIPER.swift). 
 
 - [x] It allows the compiler to help guide beginners, yet provides swiss-army flexibility to advancers.
 - [x] It fits VIPER components together like lock and key, without needing to force-cast between types.
 - [x] It automates concepts like assembly and weak relationships so you don't have to.
 - [x] It extracts assembly responsibility from the `Router` and grants it to the `Module`.
-- [x] It uses `Entities` to define the dependencies of an `Interactor`, and `Builder` to provide dependency injection to the `Router` for navigation.
-- [x] It designates the `Interactor` as the holder of state, and exchanges the `Presenter` with the `Interactor` in the assembly. This allows a uni-directional data flow from `View` to `Interactor` to `Presenter` to `View`, more closely in line with the Clean Architecture.
+- [x] It uses `Entities` to define the dependencies of an `Interactor`, and `Builder` to provide dependency injection to the `Router`.
+- [x] It designates the `Interactor` as the holder of state, and uses a PresenterModel to communicate between the business logic and presentation logic layers. Presenters use the PresenterModel to consult their state and update their ViewModel without exposing the Entity layer. This setup embraces modern practices like Reactive programming using Combine.
 
 All this results in a VIPER architecture implementation that's simple and sophisticated. For that reason, it's simply called "VIPER".
 

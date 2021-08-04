@@ -23,18 +23,18 @@ struct View: Template {
         return
 """
 import \(framework)
-import Combine
 
 import VIPER
         
 extension \(moduleName) {
 
-    class View: \(view), VIPERView {
+    class View: \(view), VIPER.View {
         
-        let interactor = PassthroughSubject<UserInteraction, Never>()
-        private var viewModel: ViewModel
+        typealias UserInteraction = \(moduleName).UserInteraction
+
+        private let viewModel: ViewModel
         
-        required init(input viewModel: ViewModel) {
+        required init(viewModel: ViewModel) {
             self.viewModel = viewModel
             super.init(nibName: nil, bundle: nil)
         }
@@ -46,18 +46,9 @@ extension \(moduleName) {
         override func viewDidLoad() {
             super.viewDidLoad()
             
-            DispatchQueue.main.async { [unowned self] in
-                self.receive(input: self.viewModel)
-            }
+            // Bind to the viewModel
         }
-        
-        func receive(input viewModel: ViewModel) {
-            defer {
-                self.viewModel = viewModel
-            }
-            guard isViewLoaded else { return }
-        }
-            
+
     }
 
 }
