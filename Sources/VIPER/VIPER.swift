@@ -232,7 +232,7 @@ public final class Module<View: VIPER.View, Interactor: VIPER.Interactor, Presen
     View == Router.View
 {
     
-    public typealias Components = (view: View, interactor: Interactor, presenter: Presenter, router: Router)
+    internal typealias Components = (view: View, interactor: Interactor, presenter: Presenter, router: Router)
     
     private init() {}
     

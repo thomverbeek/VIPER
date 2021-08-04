@@ -3,11 +3,11 @@ import XCTest
 @testable import VIPER
 
 private extension Example {
+        
+    typealias Module = VIPER.Module<View, Interactor, Presenter, Router>
     
-    typealias Components = (view: View, interactor: Interactor, presenter: Presenter, router: Router)
-    
-    static func components(entities: Entities, builder: Builder) -> Components {
-        return Module<View, Interactor, Presenter, Router>.components(entities: entities, builder: builder)
+    static func components(entities: Entities, builder: Builder) -> Module.Components {
+        return Module.components(entities: entities, builder: builder)
     }
 
 }
